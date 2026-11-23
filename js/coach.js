@@ -29,16 +29,16 @@ if (!COACH_MODES[Coach.mode]) Coach.mode = 'hint';
 
 // Окремий режим тренера для тренувальної гри і для гри на монети
 // (на монети тренер не підказує безкоштовно — лише оцінює, а підказка коштує 1 BB)
-const coachModeKey = () => (G.table && G.table.cash) ? 'poker_coach_mode_cash' : 'poker_coach_mode';
+const coachModeKey = () => isReal() ? 'poker_coach_mode_cash' : 'poker_coach_mode';
 function loadCoachMode() {
-  const cash = !!(G.table && G.table.cash);
+  const cash = isReal();
   let m = localStorage.getItem(coachModeKey()) || (cash ? 'judge' : 'hint');
   if (!COACH_MODES[m] || (cash && m === 'hint')) m = cash ? 'judge' : 'hint';
   Coach.mode = m;
   const sel = $('opt-coach');
   if (sel) sel.value = m;
 }
-function coachHintCost() { return (G.table && G.table.cash) ? BB : 0; }
+function coachHintCost() { return isTourney() ? 30 : isCash() ? BB : 0; }
 function coachHintClick() {
   const cost = coachHintCost();
   if (cost && !spendCoins(cost)) { notify(`Для підказки потрібно ${fmt(cost)} 🪙.`, 'warn', '💡'); return; }
@@ -228,16 +228,21 @@ function coachHandStart() {
 }
 
 function coachBeforeHuman(p) {
-  Coach.spot = coachOn() ? analyzeSpot(p) : null;
+  // аналізуємо завжди: оцінка потрібна для історії роздач і завдань, навіть коли тренер мовчить
+  Coach.spot = analyzeSpot(p);
   Coach.showHint = false;
 }
 
 function coachAfterHuman(p, act) {
   const s = Coach.spot;
   Coach.spot = null;
-  if (!coachOn() || !s) return;
+  $('hint-bar').classList.add('hidden');
+  if (!s) return;
   const r = gradeDecision(s, act);
   const item = { g: r.g, text: r.text, action: p.lastAction, street: s.street, rec: s.rec.act };
+  recGrade(item);
+  gameEvent('decision', { g: r.g, score: GRADES[r.g].score, street: s.street, type: act.type });
+  if (!coachOn()) return;
   Coach.feed.push(item);
   const sc = GRADES[r.g].score;
   Coach.stats.n++;
@@ -355,6 +360,8 @@ function handSummary(me) {
 }
 
 function renderCoachIdle() {
+  const hb = $('hint-bar');
+  if (hb && !G.humanResolve) hb.classList.add('hidden');
   if (Coach.mode === 'off') { setCoach('<p class="muted">Тренер вимкнений. Увімкніть його в налаштуваннях нижче.</p>'); return; }
   const me = G.players[0];
   if (!me || !me.hole.length) { setCoach(coachStatsHTML() + '<p class="muted">Роздача ось-ось почнеться — я дивитимусь за кожним твоїм ходом.</p>'); return; }
@@ -365,9 +372,24 @@ function renderCoachIdle() {
   setCoach(renderCardMarkup(h));
 }
 
+// Коротка підказка над кнопками (на телефоні замість бічної панелі)
+function renderHintBar(s) {
+  const bar = $('hint-bar');
+  if (!bar) return;
+  if (Coach.mode === 'off' || !G.humanResolve) { bar.classList.add('hidden'); return; }
+  if (Coach.mode === 'judge' && !Coach.showHint) {
+    const cost = coachHintCost();
+    bar.innerHTML = `<span>🤔 Вирішуйте самі</span><button class="hb-btn" onclick="coachHintClick();openCoachSheet()">💡 Підказка${cost ? ` · ${fmt(cost)} 🪙` : ''}</button>`;
+  } else {
+    bar.innerHTML = `<span class="hb-rec rec-${s.rec.cls}">💡 <b>${s.rec.act}</b></span><span class="hb-eq">шанс ${pct(s.eq)}${s.toCall ? ` · треба ≥${pct(s.need)}` : ''}</span><button class="hb-btn" onclick="openCoachSheet()">Чому?</button>`;
+  }
+  bar.classList.remove('hidden');
+}
+
 function renderCoach(me) {
-  if (Coach.mode === 'off') { setCoach('<p class="muted">Тренер вимкнений.</p>'); return; }
+  if (Coach.mode === 'off') { setCoach('<p class="muted">Тренер вимкнений.</p>'); renderHintBar(); return; }
   const s = Coach.spot || analyzeSpot(me);
+  renderHintBar(s);
   let h = coachStatsHTML();
   if (Coach.mode === 'judge' && !Coach.showHint) {
     h += `<div class="coach-now judge"><div class="rec-t">🤔 Ваш хід — вирішіть самі</div>
@@ -448,7 +470,8 @@ function renderCoachReview(diff) {
 }
 
 function setCoachMode(m) {
-  if (G.table && G.table.cash && m === 'hint') m = 'judge';
+  if (isReal() && m === 'hint') m = 'judge';
+  if (m === 'off') hideCoachToast();
   Coach.mode = m;
   localStorage.setItem(coachModeKey(), m);
   const sel = $('opt-coach');

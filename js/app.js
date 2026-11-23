@@ -14,9 +14,10 @@ const VIEW_RENDER = {
   lobby: () => renderLobby(),
   shop: () => renderShop(),
   profile: () => renderProfile(),
+  history: () => renderHistory(),
   quiz: () => { const s = document.querySelector('#quiz-area .qscore'); if (s) s.outerHTML = quizScoreHTML(); },
 };
-const NAV_OF = { lobby: 'play', profile: 'menu' };
+const NAV_OF = { lobby: 'play', profile: 'menu', history: 'menu' };
 
 function showView(v) {
   if (v === 'play' && !G.table) v = 'lobby';
@@ -68,7 +69,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 
 // ---------- Запуск ----------
 recoverSeat();
+recoverTourney();
 applySkins();
+progressTick();
 renderLessonList();
 openLesson(Math.min(lessonDone().length, LESSONS.length - 1));
 renderQuizTabs();

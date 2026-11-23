@@ -108,6 +108,15 @@ function recoverSeat() {
   saveProfile();
   if (c > 0) setTimeout(() => notify(`Повернено <b>${fmt(c)} 🪙</b> з незавершеної гри за столом.`, 'info', '↩️'), 500);
 }
+// Гру закрили посеред турніру — повертаємо половину внеску
+function recoverTourney() {
+  if (!Prof.tourney) return;
+  const back = Math.round((Prof.tourney.buy || 0) / 2);
+  Prof.tourney = null;
+  Prof.coins += back;
+  saveProfile();
+  if (back) setTimeout(() => notify(`Турнір перервано, бо гру було закрито. Повернено половину внеску: <b>${fmt(back)} 🪙</b>.`, 'warn', '🏟️'), 700);
+}
 
 // ---------- Допомога при банкрутстві ----------
 function isBroke() {
@@ -162,6 +171,7 @@ const ACHIEVEMENTS = [
   { id: 'shop_15', icon: '🧳', t: 'Колекціонер', d: 'Зберіть 15 предметів', r: 800, goal: s => [s.bought, 15] },
   { id: 'shop_40', icon: '🏛️', t: 'Магнат', d: 'Зберіть 40 предметів', r: 3000, goal: s => [s.bought, 40] },
   { id: 'chest_1', icon: '🗝️', t: 'Щасливий ключ', d: 'Відкрийте першу скриню', r: 100 },
+  { id: 'tourney_win', icon: '🏟️', t: 'Чемпіон', d: 'Виграйте турнір', r: 500 },
   { id: 'level_5', icon: '⭐', t: 'Досвідчений', d: 'Досягніть 5 рівня', r: 250 },
 ];
 
@@ -213,6 +223,7 @@ function onDecision(g) {
 function quizEarnedToday() { return Prof.quizDay.d === todayStr() ? Prof.quizDay.n : 0; }
 
 function onQuiz(ok, streak) {
+  if (typeof gameEvent === 'function') gameEvent('quiz', { ok, streak });
   if (!ok) return 0;
   const s = Prof.stats;
   s.quizRight++;
@@ -233,6 +244,7 @@ function onQuiz(ok, streak) {
 function onLessonDone(i) {
   if (Prof.lessonsPaid.includes(i)) return;
   Prof.lessonsPaid.push(i);
+  if (typeof gameEvent === 'function') gameEvent('lesson', { i });
   Prof.coins += LESSON_COIN;
   saveProfile();
   updateWalletUI(LESSON_COIN);
@@ -247,6 +259,10 @@ function notify(html, kind = 'info', icon = 'ℹ️') {
   const t = document.createElement('div');
   t.className = 'toast t-' + kind;
   t.innerHTML = `<div class="toast-i">${icon}</div><div class="toast-b">${html}</div>`;
+  if (typeof sfx === 'function') {
+    if (kind === 'ach') { sfx('ach'); buzz('ach'); }
+    else if (kind === 'level') { sfx('level'); buzz('ach'); }
+  }
   const close = () => { if (!t.isConnected) return; t.classList.add('out'); setTimeout(() => t.remove(), 320); };
   t.onclick = close;
   if (typeof swipeToDismiss === 'function') swipeToDismiss(t, () => t.remove());
@@ -273,6 +289,7 @@ function updateHud() {
 
 function updateWalletUI(delta) {
   updateHud();
+  if (typeof progressTick === 'function') progressTick();
   const w = document.getElementById('wallet');
   if (!w || !delta) return;
   bump(w);

@@ -67,8 +67,16 @@
   <!-- ГРА -->
   <section id="view-play" class="view">
     <div id="table-bar" class="table-bar hidden">
-      <div class="tb-l"><span class="tb-icon" id="tb-icon"></span><div><b id="tb-name"></b><small id="tb-info"></small></div></div>
-      <div class="tb-r"><div class="tb-sess" id="tb-sess"></div><button id="btn-leave" class="btn small">🚪 Встати з-за столу</button></div>
+      <div class="tb-l"><span class="tb-icon" id="tb-icon"></span><div><b id="tb-name"></b><small id="tb-info"></small><div class="tb-sess" id="tb-sess"></div></div></div>
+      <div class="tb-tools">
+        <button id="tb-coach" class="tb-btn" onclick="toggleCoachQuick()" title="Тренер">🎓</button>
+        <button id="tb-react" class="tb-btn" onclick="toggleReactions()" title="Реакції">😀</button>
+        <button class="tb-btn m-only" onclick="openJournal()" title="Журнал">📜</button>
+        <button class="tb-btn m-only" onclick="openTableSettings()" title="Налаштування">⚙️</button>
+        <button id="tb-sound" class="tb-btn d-only" onclick="setSoundUI(!Snd.on)" title="Звук">🔊</button>
+        <button id="btn-leave" class="btn small">🚪</button>
+      </div>
+      <div id="react-pop" class="react-pop hidden"></div>
     </div>
     <div class="play-wrap">
       <div class="table-area">
@@ -89,6 +97,7 @@
           <div id="coach-toast" class="coach-toast" title="Натисніть, щоб закрити"></div>
         </div>
 
+        <div id="hint-bar" class="hint-bar hidden"></div>
         <div id="controls" class="controls hidden">
           <button id="btn-fold" class="btn act fold" title="Клавіша F">Фолд</button>
           <button id="btn-call" class="btn act call" title="Клавіша C або пробіл">Чек</button>
@@ -126,6 +135,8 @@
           <small id="opt-coach-note" class="muted hidden">У грі на монети тренер лише оцінює. Підказка коштує 1 великий блайнд.</small>
           <label id="opt-show-row"><input type="checkbox" id="opt-show"> Відкриті карти ботів (навчальний режим)</label>
           <label><input type="checkbox" id="opt-auto"> Наступна роздача автоматично</label>
+          <label><input type="checkbox" id="opt-sound"> Звуки</label>
+          <label id="opt-vib-row"><input type="checkbox" id="opt-vib"> Вібрація</label>
           <label>Швидкість ботів:
             <select id="opt-speed">
               <option value="1400">Повільно</option>
@@ -147,6 +158,9 @@
 
   <!-- ПРОФІЛЬ -->
   <section id="view-profile" class="view"></section>
+
+  <!-- ІСТОРІЯ РОЗДАЧ -->
+  <section id="view-history" class="view"></section>
 </main>
 
 <div id="modal" class="modal hidden" onclick="if(event.target===this)closeModal()">
@@ -155,6 +169,7 @@
 <div id="toasts" class="toasts"></div>
 
 <script src="js/fx.js"></script>
+<script src="js/sound.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/profile.js"></script>
 <script src="js/lessons.js"></script>
@@ -162,6 +177,9 @@
 <script src="js/coach.js"></script>
 <script src="js/game.js"></script>
 <script src="js/shop.js"></script>
+<script src="js/quests.js"></script>
+<script src="js/history.js"></script>
+<script src="js/backup.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/app.js"></script>
 <script>

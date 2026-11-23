@@ -337,6 +337,7 @@ function grantItem(cat, id) {
   Prof.stats.bought++;
   saveProfile();
   checkGoalAch();
+  gameEvent('buy', { cat, id });
 }
 
 function buyItem(cat, id) {
@@ -345,6 +346,7 @@ function buyItem(cat, id) {
   if (it.lvl && myLevel() < it.lvl) return;
   if (!spendCoins(priceOf(cat, it))) { notify('Недостатньо монет.', 'warn', '🪙'); return; }
   grantItem(cat, id);
+  sfx('coin');
   notify(`Куплено: <b>${it.n}</b>`, 'info', '🛍️');
   equipItem(cat, id);
 }
@@ -373,6 +375,7 @@ function openChest(chId) {
   unlockAch('chest_1');
   const r = rarity(it.price);
   showModal(`<div class="chest-open"><div class="chest-big shaking">${ch.icon}</div><p class="muted">Відкриваємо…</p></div>`);
+  sfx('chest');
   setTimeout(() => {
     const again = chestPool(ch).length && Prof.coins >= ch.price;
     $('modal-body').innerHTML = `<div class="chest-open">
