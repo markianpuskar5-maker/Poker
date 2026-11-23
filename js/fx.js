@@ -23,6 +23,53 @@ function isVisible(el) {
   return r.width > 0 && r.height > 0;
 }
 
+// Свайп убік або вгору закриває елемент (сповіщення, підказки тренера)
+function swipeToDismiss(el, onDismiss) {
+  let id = null, sx = 0, sy = 0, dx = 0, dy = 0, moved = false;
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    id = e.pointerId; sx = e.clientX; sy = e.clientY; dx = dy = 0; moved = false;
+  });
+  el.addEventListener('pointermove', e => {
+    if (e.pointerId !== id) return;
+    dx = e.clientX - sx;
+    dy = Math.min(0, e.clientY - sy); // тягнемо лише вгору
+    if (!moved && Math.hypot(dx, dy) > 8) {
+      moved = true;
+      el.style.transition = 'none';
+      try { el.setPointerCapture(id); } catch { }
+    }
+    if (!moved) return;
+    const d = Math.max(Math.abs(dx), Math.abs(dy) * 1.6);
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
+    el.style.opacity = Math.max(.1, 1 - d / 240);
+  });
+  const end = e => {
+    if (e.pointerId !== id) return;
+    id = null;
+    if (!moved) return;
+    el._swiped = true;
+    setTimeout(() => { el._swiped = false; }, 300);
+    const gone = Math.abs(dx) > 70 || dy < -35;
+    el.style.transition = 'transform .25s ease-out, opacity .25s ease-out';
+    if (gone) {
+      const horiz = Math.abs(dx) > Math.abs(dy);
+      el.style.transform = horiz ? `translate(${Math.sign(dx) * innerWidth}px, ${dy}px)` : `translate(${dx}px, -160px)`;
+      el.style.opacity = 0;
+      setTimeout(onDismiss, 230);
+    } else {
+      el.style.transform = '';
+      el.style.opacity = '';
+      setTimeout(() => { el.style.transition = ''; }, 260);
+    }
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  // після свайпу не спрацьовує «клік»
+  el.addEventListener('click', e => { if (el._swiped) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+}
+function resetSwipe(el) { el.style.transform = el.style.opacity = el.style.transition = ''; }
+
 // FLIP: елемент «прилітає» з точки from (елемента або {x,y,w})
 function flyIn(el, from, { delay = 0, dur = 420, rotate = -18, fade = false } = {}) {
   if (FX.reduced || !el.animate) return Promise.resolve();

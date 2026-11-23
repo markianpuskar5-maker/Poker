@@ -16,9 +16,9 @@ function defaultProfile() {
     name: 'Гравець',
     coins: START_COINS,
     xp: 0,
-    owned: { back: ['classic'], felt: ['green'], avatar: ['🙂'], fx: ['confetti'] },
-    equip: { back: 'classic', felt: 'green', avatar: '🙂', fx: 'confetti' },
-    stats: { hands: 0, won: 0, biggest: 0, bestCat: -1, cashHands: 0, cashProfit: 0, quizRight: 0, quizBest: 0, great: 0, sessions: 0, bought: 0 },
+    owned: { back: ['classic'], felt: ['green'], chips: ['classic'], avatar: ['🙂'], frame: ['none'], title: ['none'], fx: ['confetti'] },
+    equip: { back: 'classic', felt: 'green', chips: 'classic', avatar: '🙂', frame: 'none', title: 'none', fx: 'confetti' },
+    stats: { hands: 0, won: 0, biggest: 0, bestCat: -1, cashHands: 0, cashProfit: 0, quizRight: 0, quizBest: 0, great: 0, sessions: 0, bought: 0, chests: 0 },
     ach: {},
     daily: { last: '', streak: 0 },
     quizDay: { d: '', n: 0 },
@@ -159,6 +159,9 @@ const ACHIEVEMENTS = [
   { id: 'cash_first', icon: '🪙', t: 'Справжня гра', d: 'Сядьте за стіл на монети', r: 100 },
   { id: 'high', icon: '🎩', t: 'Хайролер', d: 'Сядьте за стіл «Хайролер» або VIP', r: 1000 },
   { id: 'shop_5', icon: '🛍️', t: 'Модник', d: 'Купіть 5 предметів у магазині', r: 300, goal: s => [s.bought, 5] },
+  { id: 'shop_15', icon: '🧳', t: 'Колекціонер', d: 'Зберіть 15 предметів', r: 800, goal: s => [s.bought, 15] },
+  { id: 'shop_40', icon: '🏛️', t: 'Магнат', d: 'Зберіть 40 предметів', r: 3000, goal: s => [s.bought, 40] },
+  { id: 'chest_1', icon: '🗝️', t: 'Щасливий ключ', d: 'Відкрийте першу скриню', r: 100 },
   { id: 'level_5', icon: '⭐', t: 'Досвідчений', d: 'Досягніть 5 рівня', r: 250 },
 ];
 
@@ -244,11 +247,14 @@ function notify(html, kind = 'info', icon = 'ℹ️') {
   const t = document.createElement('div');
   t.className = 'toast t-' + kind;
   t.innerHTML = `<div class="toast-i">${icon}</div><div class="toast-b">${html}</div>`;
-  const close = () => { t.classList.add('out'); setTimeout(() => t.remove(), 320); };
+  const close = () => { if (!t.isConnected) return; t.classList.add('out'); setTimeout(() => t.remove(), 320); };
   t.onclick = close;
+  if (typeof swipeToDismiss === 'function') swipeToDismiss(t, () => t.remove());
   box.appendChild(t);
   setTimeout(close, kind === 'ach' || kind === 'level' ? 6500 : 4500);
-  while (box.children.length > 4) box.firstChild.remove();
+  // на телефоні — не більше двох сповіщень одночасно
+  const max = matchMedia('(max-width: 700px)').matches ? 2 : 4;
+  while (box.children.length > max) box.firstChild.remove();
 }
 
 // ---------- Верхня панель: рівень і гаманець ----------

@@ -46,13 +46,25 @@ function coachHintClick() {
   renderCoach(G.players[0]);
 }
 
-const ARCH_NOTES = {
-  rock: (n, ai) => `${n} ${ai ? 'йде ол-ін' : 'підвищує'}. Це обережний гравець — найчастіше в такого сильна рука. Без хорошої комбінації краще не продовжувати.`,
-  tag: (n, ai) => `${n} ${ai ? 'йде ол-ін' : 'підвищує'}. Гравець збалансований — рахуйте шанси банку, щоб вирішити.`,
-  lag: (n, ai) => `${n} ${ai ? 'йде ол-ін' : 'знову атакує'}. Агресивні гравці часто блефують, тому проти них можна коллювати трохи ширше.`,
-  station: (n, ai) => `${n} ${ai ? 'йде ол-ін' : 'підвищує'}! Колл-станція підвищує дуже рідко — це майже завжди сильна рука. Обережно!`,
-  maniac: (n, ai) => `${n} ${ai ? 'йде ол-ін' : 'знову ставить'}. Шалений гравець ставить майже з будь-чим: із сильною рукою дайте йому самому роздувати банк.`,
-};
+// Тренер «читає» суперника лише за тим, що бачив за цим столом — як справжня людина
+function opponentNote(p) {
+  const o = p.obs || { hands: 0, vpip: 0, raised: 0 };
+  const act = p.allIn ? 'йде ол-ін' : 'підвищує';
+  const pct = x => Math.round(x * 100) + '%';
+  const f = p.sex === 'f', him = f ? 'неї' : 'нього', he = f ? 'вона' : 'він';
+  let s;
+  if (o.hands < 6) s = `${p.name} ${act}. Ви бачили цього гравця лише ${o.hands} ${o.hands === 1 ? 'роздачу' : o.hands < 5 && o.hands > 1 ? 'роздачі' : 'роздач'} — звичок ще не видно. Орієнтуйтеся на розмір ставки та шанси банку.`;
+  else {
+    const rr = o.raised / o.hands, vp = o.vpip / o.hands;
+    if (rr < 0.15) s = `${p.name} ${act}. Помітно, що ${p.name} підвищує рідко (лише в ${pct(rr)} роздач) — від такого гравця ставка зазвичай означає сильну руку.`;
+    else if (rr > 0.35) s = `${p.name} ${act}. ${p.name} ставить часто (у ${pct(rr)} роздач) — серед таких ставок чимало блефу, тож проти ${him} можна коллювати трохи ширше.`;
+    else s = `${p.name} ${act}. Гравець ставить помірно (у ${pct(rr)} роздач) — рахуйте шанси банку, щоб вирішити.`;
+    if (vp > 0.55) s += ` Ще ${he} грає дуже багато рук (${pct(vp)}) — карти в ${him} часто слабші, ніж здається.`;
+  }
+  if (p.mood < -0.45) s += ' І схоже, що після програшу гравець роздратований 😤 — на емоціях люди частіше блефують і переплачують.';
+  else if (p.mood > 0.5) s += ` Зараз у ${him} хороша смуга 😎 — впевнені гравці ставлять сміливіше.`;
+  return s;
+}
 
 function coachStatsLoad() {
   const base = { n: 0, good: 0, ok: 0, bad: 0 };
@@ -245,8 +257,7 @@ function coachWatchBot(p, act) {
   if (Coach.watched.has(key)) return;
   Coach.watched.add(key);
   const big = p.bet >= potTotal() * 0.6 || p.allIn;
-  const note = ARCH_NOTES[p.arch];
-  const text = (note ? note(p.name, p.allIn) : `${p.name} підвищує.`) + (big ? ' Ставка велика — це сильний сигнал.' : '');
+  const text = opponentNote(p) + (big ? ' Ставка велика — це сильний сигнал.' : '');
   Coach.feed.push({ g: 'info', text, street: G.street });
   renderCoachIdle();
 }
@@ -281,6 +292,7 @@ function showCoachToast(item) {
   const el = $('coach-toast');
   if (!el) return;
   const gr = GRADES[item.g];
+  resetSwipe(el);
   el.className = 'coach-toast ' + gr.cls;
   el.innerHTML = `<div class="ct-av">🎓</div><div class="ct-body"><div class="ct-t">${gr.icon} ${gr.t}<span class="ct-act">${item.action || ''}</span></div><div class="ct-s">${item.text}</div></div>`;
   replay(el, 'show');

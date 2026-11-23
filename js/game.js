@@ -2,14 +2,76 @@
 
 let SB = 10, BB = 20; // змінюються залежно від столу
 
-// Типи суперників
-const ARCH = {
-  rock: { m: 'Обережний', f: 'Обережна', tight: 0.85, aggr: 0.35, bluff: 0.05, sticky: 0 },
-  tag: { m: 'Збалансований', f: 'Збалансована', tight: 0.55, aggr: 0.6, bluff: 0.15, sticky: 0 },
-  lag: { m: 'Агресивний', f: 'Агресивна', tight: 0.25, aggr: 0.85, bluff: 0.35, sticky: 0 },
-  station: { m: 'Колл-станція', f: 'Колл-станція', tight: 0.2, aggr: 0.12, bluff: 0.03, sticky: 0.75 },
-  maniac: { m: 'Шалений', f: 'Шалена', tight: 0.08, aggr: 0.95, bluff: 0.5, sticky: 0.3 },
+// ---------- Характер ботів ----------
+// Жодних ярликів: кожен бот — унікальна суміш рис, яка ще й змінюється від настрою,
+// розміру стека, втоми та того, що він помітив про вашу гру.
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5; // ≈ −1…1
+
+function rollPersona(skill) {
+  const sk = clamp(skill + rnd(-0.18, 0.18), 0.05, 0.98);
+  // досвідчені гравці ближчі до «правильної» гри, новачки — розкидані у крайнощі
+  const pull = (v, target) => v + (target - v) * sk * 0.55;
+  return {
+    skill: sk,
+    tight: clamp(pull(rnd(0.05, 0.95), 0.6)),
+    aggr: clamp(pull(rnd(0.1, 0.95), 0.62)),
+    bluff: clamp(pull(rnd(0.0, 0.45), 0.16)),
+    sticky: clamp((Math.random() < 0.35 ? rnd(0.25, 0.75) : rnd(0, 0.2)) * (1 - sk * 0.8)),
+    trap: rnd(0, 0.35),               // схильність «причаїтися» із сильною рукою
+    sizing: rnd(0.45, 0.95),          // улюблений розмір ставки (частка банку)
+    open: pick([2.5, 3, 3, 3, 3.5, 4]), // розмір відкриття на префлопі, у BB
+    tempo: rnd(0.65, 1.45),           // хтось думає швидко, хтось довго
+    chatty: rnd(0.05, 0.45),          // наскільки балакучий
+    tiltProne: rnd(0.15, 1),          // як сильно засмучується
+    patience: Math.round(rnd(25, 110)), // скільки роздач готовий сидіти
+  };
+}
+
+// Репліки за столом. {m|f} — варіанти для чоловіків і жінок
+const CHAT = {
+  sit: ['Всім привіт!', 'Добрий вечір, панове.', 'Ну що, роздавайте!', 'Сподіваюсь, карта сьогодні піде 🙂', 'Привіт! Я ненадовго… мабуть.', 'О, знайомі обличчя.'],
+  winBig: ['Оце так банк! 😄', 'Йес!', 'Дякую, дякую 🙏', 'Сьогодні мій вечір!', 'Я ж каза{в|ла}, що в мене є 😎', 'Красиво зайшло.'],
+  winSmall: ['Беру.', 'Дрібничка, а приємно.', 'Ок 🙂', 'Потихеньку.'],
+  loseBig: ['Та ну…', 'Ну як так?!', 'Ех, рівер…', 'Неймовірно. Просто неймовірно.', 'Я так і зна{в|ла} 😩', 'Це покер, детка…', 'Добре зіграно. Але боляче.'],
+  tilt: ['Все, тепер я зл{ий|а}.', 'Нічого, зараз відіграюсь!', 'Знову?! 😤', 'Карта просто не йде сьогодні.'],
+  foldBig: ['Забирай.', 'Не цього разу.', 'Покажеш? Ні? Ну ок.', 'Хм… пас.', 'Віддаю, хай тобі щастить.'],
+  allin: ['Ол-ін!', 'Йду на все!', 'Ну, з Богом 🙏', 'Все або нічого!'],
+  callBig: ['Хм… бачу.', 'Не вірю. Колл.', 'Ну подивимось, що в тебе.', 'Ти блефуєш, я відчуваю.'],
+  bluffShown: ['Хе-хе, нічого в мене не було 😏', 'Іноді треба ризикувати!'],
+  leaveWin: ['Я, мабуть, піду поки в плюсі. Всім дякую!', 'Час забирати виграш. Бувайте!'],
+  leaveLose: ['Все, з мене досить на сьогодні.', 'Піду провітрюсь…', 'Сьогодні не мій день. Бувайте.'],
+  leave: ['Мені пора, дякую за гру!', 'Все, біжу. Гарної гри!'],
 };
+function chatLine(p, kind) {
+  const s = pick(CHAT[kind]);
+  return s.replace(/\{([^|}]*)\|([^}]*)\}/g, (_, m, f) => (p.sex === 'f' ? f : m));
+}
+// Бот іноді щось каже. force — сказати точно
+function botSay(p, kind, force = false) {
+  if (p.human || !CHAT[kind]) return;
+  if (!force && Math.random() > p.chatty) return;
+  const text = chatLine(p, kind);
+  log(`💬 <b>${p.name}</b>: «${text}»`, 'chat');
+  const el = seatEls[p.seat] && seatEls[p.seat].chat;
+  if (!el || G.players[p.seat] !== p) return;
+  el.textContent = text;
+  replay(el, 'show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// Настрій: < 0 — засмучений (тільт), > 0 — впевнений
+function moodEmoji(p) {
+  if (p.human) return '';
+  if (p.mood < -0.55) return '😤';
+  if (p.mood < -0.3) return '😕';
+  if (p.mood > 0.45) return '😎';
+  return '';
+}
+
+const TABLE_SKILL = { practice: 0.45, micro: 0.2, club: 0.38, river: 0.58, high: 0.75, vip: 0.9 };
 
 const BOT_NAMES = [
   ['Тарас', '🧔', 'm'], ['Марко', '👨', 'm'], ['Остап', '🧑‍🦱', 'm'], ['Богдан', '👴', 'm'], ['Дмитро', '🧑', 'm'],
@@ -19,14 +81,14 @@ const BOT_NAMES = [
 ];
 
 const PRACTICE_TABLE = { id: 'practice', icon: '🎓', name: 'Гра з тренером', sb: 10, bb: 20, buyin: 1000, cash: false };
-const PRACTICE_BOTS = [['Олена', '👩', 'f', 'rock'], ['Тарас', '🧔', 'm', 'lag'], ['Марко', '👨', 'm', 'tag']];
+const PRACTICE_BOTS = [['Олена', '👩', 'f'], ['Тарас', '🧔', 'm'], ['Марко', '👨', 'm']];
 
 const TABLES = [
-  { id: 'micro', icon: '🏠', name: 'Кухонний стіл', desc: 'Дружня гра з новачками. Тут найлегше почати.', sb: 5, bb: 10, min: 200, max: 1000, lvl: 1, pool: ['station', 'station', 'maniac', 'lag', 'rock', 'tag'], foes: 'новачки, колл-станції' },
-  { id: 'club', icon: '♣️', name: 'Клуб «Трефа»', desc: 'Аматори, які вже знають правила.', sb: 10, bb: 20, min: 400, max: 2000, lvl: 2, pool: ['station', 'rock', 'lag', 'tag', 'maniac'], foes: 'аматори різних стилів' },
-  { id: 'river', icon: '🌊', name: 'Казино «Рівер»', desc: 'Серйозні гравці. Помилки коштують дорожче.', sb: 25, bb: 50, min: 1000, max: 5000, lvl: 4, pool: ['rock', 'tag', 'lag', 'tag', 'station'], foes: 'досвідчені гравці' },
-  { id: 'high', icon: '🎩', name: 'Хайролер-зал', desc: 'Великі ставки й агресивні суперники.', sb: 100, bb: 200, min: 4000, max: 20000, lvl: 6, pool: ['tag', 'lag', 'tag', 'rock', 'maniac'], foes: 'сильні й агресивні' },
-  { id: 'vip', icon: '👑', name: 'VIP «Роял»', desc: 'Еліта. Лише для найкращих.', sb: 250, bb: 500, min: 10000, max: 50000, lvl: 9, pool: ['tag', 'lag', 'tag', 'rock'], foes: 'професіонали' },
+  { id: 'micro', icon: '🏠', name: 'Кухонний стіл', desc: 'Дружня гра з новачками. Тут найлегше почати.', sb: 5, bb: 10, min: 200, max: 1000, lvl: 1, foes: 'новачки, які люблять доплачувати' },
+  { id: 'club', icon: '♣️', name: 'Клуб «Трефа»', desc: 'Аматори, які вже знають правила.', sb: 10, bb: 20, min: 400, max: 2000, lvl: 2, foes: 'аматори, кожен зі своїми звичками' },
+  { id: 'river', icon: '🌊', name: 'Казино «Рівер»', desc: 'Серйозні гравці. Помилки коштують дорожче.', sb: 25, bb: 50, min: 1000, max: 5000, lvl: 4, foes: 'досвідчені гравці' },
+  { id: 'high', icon: '🎩', name: 'Хайролер-зал', desc: 'Великі ставки й сміливі суперники.', sb: 100, bb: 200, min: 4000, max: 20000, lvl: 6, foes: 'сильні, помічають ваші звички' },
+  { id: 'vip', icon: '👑', name: 'VIP «Роял»', desc: 'Еліта. Лише для найкращих.', sb: 250, bb: 500, min: 10000, max: 50000, lvl: 9, foes: 'професіонали' },
 ].map(t => ({ ...t, cash: true }));
 
 const G = {
@@ -62,9 +124,14 @@ function cardHTML(c, cls = '') {
 function backHTML(cls = '') { return `<div class="card back ${cls}"></div>`; }
 
 // ---------- Гравці ----------
-function makeBot([name, avatar, sex], arch, chips) {
-  const a = ARCH[arch];
-  return { name, avatar, sex, arch, style: a[sex], tight: a.tight, aggr: a.aggr, bluff: a.bluff, sticky: a.sticky, human: false, chips };
+function makeBot([name, avatar, sex], skill, chips) {
+  return {
+    name, avatar, sex, human: false, chips,
+    ...rollPersona(skill),
+    mood: rnd(-0.1, 0.25),     // настрій змінюється від виграшів і програшів
+    handsHere: 0, startChips: chips,
+    obs: { hands: 0, vpip: 0, raised: 0 }, // що за ним помітили (для тренера)
+  };
 }
 function seatify(p, i) {
   return Object.assign(p, { seat: i, hole: [], bet: 0, total: 0, folded: false, allIn: false, acted: false, lastAction: '', shown: false });
@@ -75,15 +142,23 @@ function botStack(t) {
 }
 function randomBot(t) {
   const used = new Set(G.players.map(p => p.name));
-  return makeBot(pick(BOT_NAMES.filter(n => !used.has(n[0]))), pick(t.pool), botStack(t));
+  return makeBot(pick(BOT_NAMES.filter(n => !used.has(n[0]))), TABLE_SKILL[t.id] ?? 0.45, botStack(t));
 }
 
 function initPlayers(buyin) {
   const t = G.table;
   G.players = [{ name: 'Ви', avatar: Prof.equip.avatar, human: true, chips: buyin }];
   if (t.cash) for (let k = 0; k < 3; k++) G.players.push(randomBot(t));
-  else PRACTICE_BOTS.forEach(([n, av, sx, ar]) => G.players.push(makeBot([n, av, sx], ar, t.buyin)));
+  else PRACTICE_BOTS.forEach(nm => G.players.push(makeBot(nm, TABLE_SKILL.practice, t.buyin)));
   G.players.forEach(seatify);
+  // що боти помічають про вашу гру за цим столом
+  G.reads = { hands: 0, vpip: 0, raised: 0, bluffsShown: 0 };
+}
+
+// Наскільки ви, на думку ботів, агресивні: 0.25 — звично, більше — часто ставите
+function humanAggro() {
+  const r = G.reads;
+  return (r.raised + 1 + r.bluffsShown * 2) / (r.hands + 4);
 }
 
 const N = () => G.players.length;
@@ -135,13 +210,15 @@ function buildTable() {
     s.className = `seat seat-${i}`;
     s.innerHTML = `
       <div class="seat-cards"></div>
-      <div class="seat-box" ${!p.human ? `title="${p.name}: ${p.style.toLowerCase()} гравець"` : ''}>
+      <div class="seat-box">
         <div class="seat-av">${p.avatar}</div>
+        <span class="seat-mood"></span>
         <div class="seat-info">
           <div class="seat-name">${p.name}<span class="badges"></span></div>
           <div class="seat-chips"><span class="coin"></span><span class="v">${p.chips}</span></div>
-          ${!p.human ? `<div class="seat-style a-${p.arch}">${p.style}</div>` : ''}
+          ${p.human ? `<div class="seat-title">${titleBadge()}</div>` : ''}
         </div>
+        <div class="seat-chat"></div>
         <div class="seat-action"></div>
         <div class="seat-think"><i></i><i></i><i></i></div>
       </div>
@@ -150,6 +227,8 @@ function buildTable() {
     seatEls.push({
       root: s,
       av: s.querySelector('.seat-av'),
+      mood: s.querySelector('.seat-mood'),
+      chat: s.querySelector('.seat-chat'),
       cards: s.querySelector('.seat-cards'),
       box: s.querySelector('.seat-box'),
       badges: s.querySelector('.badges'),
@@ -212,6 +291,9 @@ function renderSeat(p, i, newHole) {
   r.toggle('busted', p.chips <= 0 && !p.hole.length);
 
   if (el.av.textContent !== p.avatar) el.av.textContent = p.avatar;
+  const moodE = moodEmoji(p);
+  if (el.mood.textContent !== moodE) { el.mood.textContent = moodE; if (moodE) replay(el.mood, 'pop-in'); }
+  el.mood.title = moodE === '😎' ? 'У гарному настрої' : moodE ? 'Засмучений після програшу' : '';
 
   const isSB = i === nextIdx(G.dealer), isBB = i === nextIdx(nextIdx(G.dealer));
   const badges = G.handNo ? `${isSB ? '<span class="badge sb">SB</span>' : ''}${isBB ? '<span class="badge bb">BB</span>' : ''}` : '';
@@ -376,6 +458,8 @@ function applyAction(p, act) {
     }
     text = p.allIn ? `Ол-ін ${p.bet}` : wasBet ? `Бет ${p.bet}` : `Рейз до ${p.bet}`;
   }
+  if (act.type === 'raise') { G.aggressor = p; p._r = true; }
+  if (G.street === 'preflop' && (act.type === 'call' || act.type === 'raise')) p._vp = true;
   p.acted = true;
   p.lastAction = text;
   log(`<b>${p.name}</b>: ${text}`, p.human ? 'me' : '');
@@ -396,7 +480,11 @@ async function bettingRound(startIdx) {
       render();
       let act;
       if (p.human) act = await humanTurn(p);
-      else { await sleep(G.leaveAfter ? 60 : G.settings.speed); act = botDecide(p); }
+      else {
+        act = botDecide(p);
+        await sleep(G.leaveAfter ? 60 : botThinkTime(p, act));
+        botReact(p, act);
+      }
       const before = p.bet;
       applyAction(p, act);
       G.activeIdx = -1;
@@ -415,6 +503,7 @@ function collectBets() {
   G.players.forEach(p => { p.bet = 0; p.acted = false; if (!p.folded && !p.allIn) p.lastAction = ''; });
   G.currentBet = 0;
   G.minRaise = BB;
+  G.aggressor = null;
 }
 
 // ---------- Роздача ----------
@@ -430,6 +519,7 @@ async function playHand() {
 function refreshBots() {
   const t = G.table;
   let changed = false;
+  const newcomers = [];
   G.players.forEach((p, i) => {
     if (p.human) return;
     if (!t.cash) {
@@ -437,15 +527,24 @@ function refreshBots() {
       return;
     }
     const broke = p.chips <= 0;
-    if (broke || Math.random() < 0.04) {
+    // люди йдуть по-різному: хтось утомився, хтось на емоціях, хтось забирає виграш
+    const up = p.chips > p.startChips * 1.7, down = p.chips < p.startChips * 0.5;
+    const leaveP = 0.012 + (p.handsHere > p.patience ? 0.07 : 0) + (p.mood < -0.6 ? 0.05 : 0) + (up ? 0.03 : 0) + (down ? 0.02 : 0);
+    if (broke || Math.random() < leaveP) {
       const nb = randomBot(t);
-      log(broke ? `💸 ${p.name} програє все і йде з-за столу.` : `👋 ${p.name} забирає ${p.chips} і йде з-за столу.`, 'sys');
-      log(`🪑 За стіл сідає <b>${nb.name}</b> — ${nb.style.toLowerCase()} гравець, фішок: ${nb.chips}.`, 'sys');
+      if (broke) log(`💸 ${p.name} програє все і йде з-за столу.`, 'sys');
+      else {
+        botSay(p, up ? 'leaveWin' : p.mood < -0.4 || down ? 'leaveLose' : 'leave', true);
+        log(`👋 ${p.name} забирає ${p.chips} і йде з-за столу.`, 'sys');
+      }
+      log(`🪑 За стіл сідає <b>${nb.name}</b>, фішок: ${nb.chips}.`, 'sys');
       G.players[i] = seatify(nb, i);
+      newcomers.push(nb);
       changed = true;
     }
   });
   if (changed) buildTable();
+  newcomers.forEach(nb => setTimeout(() => botSay(nb, 'sit', Math.random() < 0.6), 400));
 }
 
 async function playHandInner() {
@@ -459,7 +558,10 @@ async function playHandInner() {
   G.awarded = false;
   refreshBots();
   me.avatar = Prof.equip.avatar;
-  G.players.forEach(p => Object.assign(p, { hole: [], bet: 0, total: 0, folded: false, allIn: false, acted: false, lastAction: '', shown: false }));
+  G.players.forEach(p => Object.assign(p, { hole: [], bet: 0, total: 0, folded: false, allIn: false, acted: false, lastAction: '', shown: false, _r: false, _vp: false, handStart: p.chips }));
+  G.aggressor = null;
+  // у кожного «свій день»: трохи інакший настрій від роздачі до роздачі
+  G.players.forEach(p => { if (!p.human) { p.vibe = gauss() * 0.1; p.mood *= 0.88; } });
   G.handNo++;
   coachHandStart();
   G.dealer = nextIdx(G.dealer);
@@ -582,6 +684,7 @@ async function finishHand() {
     html = `<div class="res-t">${G.lastWinners.includes(0) ? '🎉 Ви виграли!' : '🏆 ' + G.lastWinners.map(i => G.players[i].name).join(' і ') + ' виграє'}</div><div class="res-s">${lines.join('<br>')}</div>`;
   }
   syncSeat();
+  botsAfterHand(live);
   if (live.length > 1) highlightCards(bestFive(G.players[G.lastWinners[0]].hole.concat(G.board)).map(c => c.id));
   const potEl = $('pot-chips');
   const flights = G.lastWinners.map(i => flyChips(potEl, seatEls[i].box, { count: Math.min(8, 2 + chipCount(potBefore)), dur: 650, stagger: 60 }));
@@ -745,46 +848,129 @@ function humanAct(type) {
 }
 
 // ---------- ШІ ботів ----------
+// Рішення бота. diff (0…1) — наскільки важке рішення: від нього залежить, скільки він «думає»
 function botDecide(p) {
   const toCall = G.currentBet - p.bet;
   const pot = potTotal();
   const nOpp = liveP().length - 1;
-  const eqR = calcEquity(p.hole, G.board, nOpp, 300);
-  const eq = eqR.equity;
+  const eqTrue = calcEquity(p.hole, G.board, nOpp, 300).equity;
+  // люди не рахують шанси точно: що менше досвіду, то більша похибка
+  const vibe = p.vibe || 0;
+  const eq = clamp(eqTrue + gauss() * (1 - p.skill) * 0.14 + vibe * 0.3, 0.01, 0.99);
   const strength = eq * (nOpp + 1); // 1.0 = середня рука
+  const tilt = Math.max(0, -p.mood), conf = Math.max(0, p.mood);
+  const others = G.players.filter(o => o !== p && o.chips + o.total > 0);
+  const avgStack = others.reduce((s, o) => s + o.chips + o.total, 0) / Math.max(1, others.length);
+  const bully = p.chips > avgStack * 1.8 ? 0.1 : 0;         // великий стек тисне на інших
+  const t = {                                                // риси саме зараз
+    tight: clamp(p.tight - tilt * 0.4 - conf * 0.08 + vibe),
+    aggr: clamp(p.aggr + tilt * 0.3 + conf * 0.12 + bully),
+    bluff: clamp(p.bluff + tilt * 0.22 + bully * 0.5),
+    sticky: clamp(p.sticky + tilt * 0.25),
+  };
   const r = Math.random();
   const potOdds = toCall > 0 ? toCall / (pot + toCall) : 0;
   const maxTo = p.bet + p.chips;
-  const raiseTo = mult => {
+  const roundTo = v => Math.round(v / SB) * SB;
+  const size = () => clamp(p.sizing + rnd(-0.15, 0.2) + tilt * 0.25, 0.33, 1.3);
+  const raiseTo = (mult, diff) => {
     let to;
-    if (G.street === 'preflop') to = G.currentBet === BB ? BB * (3 + Math.floor(Math.random() * 2)) : G.currentBet * 3;
-    else to = G.currentBet + Math.max(G.minRaise, Math.round((pot + toCall) * mult / SB) * SB);
+    if (G.street === 'preflop') to = G.currentBet === BB ? roundTo(BB * (p.open + tilt + rnd(-0.25, 0.5))) : roundTo(G.currentBet * rnd(2.6, 3.4));
+    else to = G.currentBet + Math.max(G.minRaise, roundTo((pot + toCall) * mult));
     to = Math.max(to, G.currentBet + G.minRaise);
-    return { type: 'raise', to: Math.min(to, maxTo) };
+    return { type: 'raise', to: Math.min(to, maxTo), diff };
   };
-  const strongT = 1.75 - p.aggr * 0.35;
+  // що бот помітив про вас: якщо ви часто ставите — він вам менше вірить
+  const vsHuman = toCall > 0 && G.aggressor && G.aggressor.human;
+  const readAdj = vsHuman ? clamp((humanAggro() - 0.25) * 0.9 * p.skill, -0.2, 0.3) : 0;
+  const strongT = 1.75 - t.aggr * 0.35;
+
+  // короткий стек на префлопі: ол-ін або пас
+  if (G.street === 'preflop' && p.chips < BB * 12 && strength > 1.25 - t.aggr * 0.25 + t.tight * 0.15) return { type: 'raise', to: maxTo, diff: 0.7 };
+
   if (toCall === 0) {
-    if (strength > strongT && r < 0.45 + p.aggr * 0.45) return raiseTo(0.5 + Math.random() * 0.3);
-    if (strength > 1.2 && r < p.aggr * 0.4) return raiseTo(0.5);
-    if (r < p.bluff * 0.5 && nOpp <= 2) return raiseTo(0.5);
-    return { type: 'check' };
+    // із монстром іноді причаюється, щоб хтось поставив
+    if (strength > strongT + 0.3 && G.street !== 'river' && G.street !== 'preflop' && r < p.trap) return { type: 'check', diff: 0.6 };
+    if (strength > strongT && r < 0.45 + t.aggr * 0.45) return raiseTo(size(), 0.4);
+    if (strength > 1.2 && r < t.aggr * 0.4) return raiseTo(size() * 0.8, 0.5);
+    if (r < t.bluff * 0.5 && nOpp <= 2) return raiseTo(size() * 0.85, 0.7);
+    return { type: 'check', diff: strength < 0.8 ? 0.15 : 0.35 };
   }
   // є ставка
   const commit = toCall / (p.chips + p.bet);
-  if (strength > strongT + 0.35 && r < 0.3 + p.aggr * 0.5 && p.chips > toCall) return raiseTo(0.75);
-  // шалені гравці іноді підвищують з будь-чим
-  if (p.bluff > 0.4 && r < p.bluff * 0.3 && commit < 0.15 && p.chips > toCall * 3) return raiseTo(0.6);
-  if (commit > 0.35 && strength < 1.35 + p.tight * 0.3 - p.sticky * 0.6) return Math.random() < p.bluff * 0.3 + p.sticky * 0.4 ? { type: 'call' } : { type: 'fold' };
+  if (strength > strongT + 0.35 && r < 0.3 + t.aggr * 0.5 && p.chips > toCall) return raiseTo(size() + 0.1, 0.6);
+  if (t.bluff > 0.3 && r < t.bluff * 0.3 && commit < 0.15 && p.chips > toCall * 3) return raiseTo(size(), 0.8);
+  if (commit > 0.35 && strength < 1.35 + t.tight * 0.3 - t.sticky * 0.6 - readAdj)
+    return Math.random() < t.bluff * 0.3 + t.sticky * 0.4 + readAdj ? { type: 'call', diff: 1 } : { type: 'fold', diff: 0.9 };
   if (G.street === 'preflop') {
-    const callT = 0.8 + p.tight * 0.4 + Math.min(0.6, (toCall / BB) * 0.04) - p.sticky * 0.45;
-    if (strength >= callT) return { type: 'call' };
-    if (toCall <= BB / 2 && r < 0.5 + p.sticky * 0.4) return { type: 'call' }; // малий блайнд доплачує
-    return { type: 'fold' };
+    const callT = 0.8 + t.tight * 0.4 + Math.min(0.6, (toCall / BB) * 0.04) - t.sticky * 0.45 - readAdj;
+    if (strength >= callT) return { type: 'call', diff: strength - callT < 0.15 ? 0.7 : 0.3 };
+    if (toCall <= BB / 2 && r < 0.5 + t.sticky * 0.4) return { type: 'call', diff: 0.3 }; // малий блайнд доплачує
+    return { type: 'fold', diff: callT - strength < 0.15 ? 0.6 : 0.1 };
   }
-  const need = potOdds * (0.85 + p.tight * 0.5) * (1 - p.sticky * 0.45);
-  if (eq >= need) return { type: 'call' };
-  if (r < p.bluff * 0.25 && commit < 0.1 && p.chips > toCall) return raiseTo(0.6);
-  return { type: 'fold' };
+  const need = potOdds * (0.85 + t.tight * 0.5) * (1 - t.sticky * 0.45) * (1 - readAdj);
+  if (eq >= need) return { type: 'call', diff: eq - need < 0.08 ? 0.8 : 0.35 };
+  if (r < t.bluff * 0.25 && commit < 0.1 && p.chips > toCall) return raiseTo(size(), 0.9);
+  return { type: 'fold', diff: need - eq < 0.08 ? 0.75 : 0.2 };
+}
+
+// Скільки бот «думає»: легкі рішення — швидко, важкі — довше, іноді надовго задумується
+function botThinkTime(p, act) {
+  const base = G.settings.speed * p.tempo;
+  const d = act.diff ?? 0.5;
+  let k = 0.5 + d * 1.15;
+  if (act.type === 'fold' && d < 0.25) k = 0.45;
+  if (Math.random() < 0.06) k *= 1.9;        // задумався
+  if (p.mood < -0.5) k *= 0.75;              // на емоціях діє поспіхом
+  return Math.round(clamp(base * k * rnd(0.8, 1.25), 250, G.settings.speed * 3));
+}
+
+// Коротка реакція на власну дію
+function botReact(p, act) {
+  const toCall = G.currentBet - p.bet;
+  const pot = potTotal();
+  const goesAllIn = (act.type === 'raise' && act.to >= p.bet + p.chips) || (act.type === 'call' && toCall >= p.chips);
+  if (goesAllIn && p.chips > BB * 5) botSay(p, 'allin');
+  else if (act.type === 'fold' && toCall >= pot * 0.45 && toCall >= BB * 3) { if (Math.random() < 0.5) botSay(p, 'foldBig'); }
+  else if (act.type === 'call' && toCall >= pot * 0.5 && G.aggressor && G.aggressor.human) { if (Math.random() < 0.5) botSay(p, 'callBig'); }
+}
+
+// Після роздачі: настрій, спостереження, репліки
+function botsAfterHand(live) {
+  const showdown = live.length > 1;
+  const me = G.players[0];
+  // що боти помітили про вас
+  G.reads.hands++;
+  if (me._vp) G.reads.vpip++;
+  if (me._r) G.reads.raised++;
+  if (showdown && live.includes(me) && me._r && G.board.length === 5 && evaluate(me.hole.concat(G.board)).cat === 0) G.reads.bluffsShown++;
+
+  const speakers = [];
+  G.players.forEach(p => {
+    if (p.human) return;
+    p.handsHere++;
+    p.obs.hands++;
+    if (p._vp) p.obs.vpip++;
+    if (p._r) p.obs.raised++;
+    const delta = p.chips - p.handStart;
+    if (delta < 0 && showdown && live.includes(p)) {
+      // програв на вскритті — боляче
+      const sev = clamp(-delta / BB / 40 + -delta / Math.max(1, p.handStart), 0, 1.2);
+      p.mood -= sev * 0.6 * p.tiltProne;
+      if (sev > 0.45) speakers.push({ p, kind: p.mood < -0.5 ? 'tilt' : 'loseBig', pr: sev, force: sev > 0.8 });
+    } else if (delta > 0) {
+      const g = clamp(delta / BB / 40, 0, 1);
+      p.mood += g * 0.35;
+      if (g > 0.5) speakers.push({ p, kind: 'winBig', pr: g, force: g > 0.9 });
+      else if (Math.random() < 0.25) speakers.push({ p, kind: 'winSmall', pr: 0.1 });
+      // виграв без вскриття з нічим — іноді хизується
+      if (!showdown && p._r && G.board.length >= 3 && evaluate(p.hole.concat(G.board)).cat === 0 && Math.random() < 0.3) speakers.push({ p, kind: 'bluffShown', pr: 0.5 });
+    }
+    p.mood = clamp(p.mood, -1, 1);
+  });
+  // говорить не більше одного, щоб не було галасу
+  speakers.sort((a, b) => b.pr - a.pr);
+  if (speakers[0]) setTimeout(() => botSay(speakers[0].p, speakers[0].kind, speakers[0].force), 700);
 }
 
 // ---------- Тренер: див. js/coach.js ----------
@@ -815,6 +1001,9 @@ function startTable(t, buyin) {
     ? `Ви сіли за стіл «${t.name}» з ${fmt(buyin)} фішками. Блайнди ${SB}/${BB}.`
     : `Тренувальна гра: блайнди ${SB}/${BB}, у кожного по ${buyin} фішок. Тренер підказує кожен хід.`, 'sys');
   setTimeout(playHand, 350);
+  // хтось за столом вітається
+  const bots = G.players.filter(p => !p.human);
+  setTimeout(() => botSay(pick(bots), 'sit', true), 900);
 }
 
 function startPractice() {
@@ -932,6 +1121,7 @@ function initGameUI() {
   $('opt-coach').value = Coach.mode;
   $('opt-coach').onchange = e => setCoachMode(e.target.value);
   $('coach-toast').onclick = hideCoachToast;
+  swipeToDismiss($('coach-toast'), () => { const el = $('coach-toast'); hideCoachToast(); setTimeout(() => resetSwipe(el), 350); });
   $('opt-show').onchange = e => { G.settings.showBots = e.target.checked; if (G.players.length) render(); };
   $('opt-speed').value = String(G.settings.speed);
   if (!$('opt-speed').value) $('opt-speed').value = '800';

@@ -53,6 +53,7 @@ function renderMenu() {
         <div>
           <small class="muted">Привіт,</small>
           <h1>${escapeHtml(Prof.name)}</h1>
+          ${myTitle() ? `<div class="hero-title">${titleBadge()}</div>` : ''}
           <div class="lvl-row"><span class="lvl-badge">Рівень ${lp.l}</span><div class="xpbar"><i style="width:${Math.round(lp.k * 100)}%"></i></div><small class="muted">${lp.cur} / ${lp.need} XP</small></div>
         </div>
       </div>
@@ -69,7 +70,7 @@ function renderMenu() {
       ${tile('t-quiz', '🎯', 'Тренування', '5 видів вправ: комбінації, шанси, стартові руки', `🪙 Сьогодні: ${quizEarnedToday()}/${QUIZ_DAILY_CAP}`, "showView('quiz')")}
       ${tile('t-coach', '🎓', 'Гра з тренером', 'Безкоштовні фішки. Тренер підказує й оцінює кожен хід', 'Без ризику · ідеально для старту', 'startPractice()')}
       ${tile('t-cash', '🪙', 'Гра на монети', 'Кеш-столи: ставиш монети з балансу, виграєш — більше', `${unlocked} з ${TABLES.length} столів відкрито`, "showView('lobby')")}
-      ${tile('t-shop', '🛍️', 'Магазин', 'Сорочки карт, сукно, аватари, ефекти перемоги', `${owned} предметів у колекції`, "showView('shop')")}
+      ${tile('t-shop', '🛍️', 'Магазин', 'Сорочки, сукно, фішки, аватари, рамки, титули, ефекти й скрині-сюрпризи', `${owned} предметів у колекції`, "showView('shop')")}
       ${tile('t-prof', '🏆', 'Профіль і досягнення', 'Статистика, досягнення та налаштування', `${achN}/${ACHIEVEMENTS.length} досягнень`, "showView('profile')")}
     </div>
   </div>`;
@@ -206,6 +207,7 @@ function renderProfile() {
       <div class="ph-main">
         <label class="muted" for="prof-name">Ім'я гравця</label>
         <input id="prof-name" class="name-input" maxlength="18" value="${escapeHtml(Prof.name)}">
+        <div class="hero-title">${myTitle() ? titleBadge() : `<button class="link" style="margin:0" onclick="shopTab='title';showView('shop')">+ Додати титул</button>`}</div>
         <div class="lvl-row"><span class="lvl-badge">Рівень ${lp.l}</span><div class="xpbar"><i style="width:${Math.round(lp.k * 100)}%"></i></div><small class="muted">${lp.cur} / ${lp.need} XP</small></div>
       </div>
       <div class="hero-r"><small class="muted">Баланс</small><div class="balance-big"><span class="coin"></span>${fmt(Prof.coins)}</div></div>

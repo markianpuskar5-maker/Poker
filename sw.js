@@ -1,6 +1,6 @@
 // Service worker: гра працює без інтернету після першого відкриття.
 // Після зміни файлів гри збільште номер версії, щоб телефон підтягнув оновлення.
-const CACHE = 'poker-school-v1';
+const CACHE = 'poker-school-v4';
 const FILES = [
   './',
   'index.html',
