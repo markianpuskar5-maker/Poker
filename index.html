@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Покер-Школа — Техаський Холдем з навчанням</title>
+<meta name="description" content="Техаський Холдем з навчанням, тренуваннями і тренером">
+<meta name="theme-color" content="#0a0e13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Покер-Школа">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <button class="logo" onclick="showView('menu')" title="Головне меню">♠ <span>Покер-Школа</span></button>
+  <nav>
+    <button class="nav-btn" data-view="menu"><span class="ni">🏠</span> <span class="nl">Меню</span></button>
+    <button class="nav-btn" data-view="learn"><span class="ni">📘</span> <span class="nl">Навчання</span></button>
+    <button class="nav-btn" data-view="quiz"><span class="ni">🎯</span> <span class="nl">Тренування</span></button>
+    <button class="nav-btn" data-view="play"><span class="ni">🃏</span> <span class="nl">Гра</span></button>
+    <button class="nav-btn" data-view="shop"><span class="ni">🛍️</span> <span class="nl">Магазин</span></button>
+    <button class="nav-btn nav-cheat" onclick="showCheat()" title="Шпаргалка: комбінації"><span class="ni">📋</span> <span class="nl m-only">Шпаргалка</span></button>
+    <span id="nav-ind" class="nav-ind"></span>
+  </nav>
+  <div class="hud">
+    <button class="hud-prof" onclick="showView('profile')" title="Профіль">
+      <span id="hud-av" class="hud-av"></span>
+      <span id="hud-lvl" class="lvl-chip"></span>
+    </button>
+    <button class="wallet" id="wallet" onclick="showView('profile')" title="Ваші монети"><span class="coin"></span><b id="wallet-v"></b></button>
+  </div>
+</header>
+
+<main>
+  <!-- ГОЛОВНЕ МЕНЮ -->
+  <section id="view-menu" class="view"></section>
+
+  <!-- НАВЧАННЯ -->
+  <section id="view-learn" class="view">
+    <div class="learn-wrap">
+      <aside class="lesson-side">
+        <h3>Курс для початківців</h3>
+        <div id="lesson-progress"></div>
+        <div id="lesson-list"></div>
+      </aside>
+      <article id="lesson-content" class="lesson"></article>
+    </div>
+  </section>
+
+  <!-- ТРЕНУВАННЯ -->
+  <section id="view-quiz" class="view">
+    <div class="quiz-wrap">
+      <div id="quiz-tabs" class="quiz-tabs"></div>
+      <div id="quiz-area" class="quiz-area"></div>
+    </div>
+  </section>
+
+  <!-- ВИБІР СТОЛУ -->
+  <section id="view-lobby" class="view"></section>
+
+  <!-- ГРА -->
+  <section id="view-play" class="view">
+    <div id="table-bar" class="table-bar hidden">
+      <div class="tb-l"><span class="tb-icon" id="tb-icon"></span><div><b id="tb-name"></b><small id="tb-info"></small></div></div>
+      <div class="tb-r"><div class="tb-sess" id="tb-sess"></div><button id="btn-leave" class="btn small">🚪 Встати з-за столу</button></div>
+    </div>
+    <div class="play-wrap">
+      <div class="table-area">
+        <div class="table" id="table">
+          <div class="felt">
+            <div class="felt-mark">♠ ♥ ♣ ♦</div>
+            <div id="deck" class="deck"><div class="card back"></div><div class="card back"></div><div class="card back"></div></div>
+            <div class="center">
+              <div id="hand-no" class="hand-no"></div>
+              <div id="street-label" class="street-label"></div>
+              <div id="board" class="board"></div>
+              <div class="pot"><span id="pot-chips" class="chipstack big"><i></i><i></i><i></i></span>Банк: <b id="pot">0</b></div>
+              <div id="result" class="result"></div>
+            </div>
+          </div>
+          <div id="seats"></div>
+          <div id="dealer-btn" class="dealer-btn hidden">D</div>
+          <div id="coach-toast" class="coach-toast" title="Натисніть, щоб закрити"></div>
+        </div>
+
+        <div id="controls" class="controls hidden">
+          <button id="btn-fold" class="btn act fold" title="Клавіша F">Фолд</button>
+          <button id="btn-call" class="btn act call" title="Клавіша C або пробіл">Чек</button>
+          <div id="raise-box" class="raise-box">
+            <div class="presets">
+              <button class="preset" data-p="min">Мін</button>
+              <button class="preset" data-p="3bb">3 BB</button>
+              <button class="preset" data-p="half">½ банку</button>
+              <button class="preset" data-p="pot">Банк</button>
+              <button class="preset" data-p="all">Ол-ін</button>
+            </div>
+            <div class="raise-row">
+              <input type="range" id="raise-range">
+              <input type="number" id="raise-num">
+              <button id="btn-raise" class="btn act raise" title="Клавіша R">Рейз</button>
+            </div>
+          </div>
+          <div id="next-box" class="next-box hidden"><button id="btn-next" class="btn primary big" title="Клавіша N або пробіл">Наступна роздача ▶</button></div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel coach-panel">
+          <h3>🎓 Тренер</h3>
+          <div id="coach"></div>
+        </div>
+        <div class="panel opts">
+          <label class="opt-col">🎓 Режим тренера:
+            <select id="opt-coach">
+              <option value="hint">Підказує перед ходом і оцінює</option>
+              <option value="judge">Я вирішую сам — тренер оцінює</option>
+              <option value="off">Вимкнено</option>
+            </select>
+          </label>
+          <small id="opt-coach-note" class="muted hidden">У грі на монети тренер лише оцінює. Підказка коштує 1 великий блайнд.</small>
+          <label id="opt-show-row"><input type="checkbox" id="opt-show"> Відкриті карти ботів (навчальний режим)</label>
+          <label><input type="checkbox" id="opt-auto"> Наступна роздача автоматично</label>
+          <label>Швидкість ботів:
+            <select id="opt-speed">
+              <option value="1400">Повільно</option>
+              <option value="800">Нормально</option>
+              <option value="350">Швидко</option>
+            </select>
+          </label>
+        </div>
+        <div class="panel log-panel">
+          <h3>📜 Журнал</h3>
+          <div id="log" class="log"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- МАГАЗИН -->
+  <section id="view-shop" class="view"></section>
+
+  <!-- ПРОФІЛЬ -->
+  <section id="view-profile" class="view"></section>
+</main>
+
+<div id="modal" class="modal hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box"><button class="modal-x" onclick="closeModal()">✕</button><div id="modal-body"></div></div>
+</div>
+<div id="toasts" class="toasts"></div>
+
+<script src="js/fx.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/lessons.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/coach.js"></script>
+<script src="js/game.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/app.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
