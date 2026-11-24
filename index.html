@@ -15,6 +15,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/autopilot.css">
 </head>
 <body>
 <header class="top">
@@ -69,6 +70,7 @@
     <div id="table-bar" class="table-bar hidden">
       <div class="tb-l"><span class="tb-icon" id="tb-icon"></span><div><b id="tb-name"></b><small id="tb-info"></small><div class="tb-sess" id="tb-sess"></div></div></div>
       <div class="tb-tools">
+        <button id="tb-auto" class="tb-btn tb-auto hidden" onclick="autoToggle()" title="Автогра: Claude грає за вас і пояснює кожен хід">🤖</button>
         <button id="tb-coach" class="tb-btn" onclick="toggleCoachQuick()" title="Тренер">🎓</button>
         <button id="tb-react" class="tb-btn" onclick="toggleReactions()" title="Реакції">😀</button>
         <button class="tb-btn m-only" onclick="openJournal()" title="Журнал">📜</button>
@@ -115,7 +117,7 @@
               <button id="btn-raise" class="btn act raise" title="Клавіша R">Рейз</button>
             </div>
           </div>
-          <div id="next-box" class="next-box hidden"><button id="btn-next" class="btn primary big" title="Клавіша N або пробіл">Наступна роздача ▶</button></div>
+          <div id="next-box" class="next-box hidden"><div id="res-m" class="res-m"></div><button id="btn-next" class="btn primary big" title="Клавіша N або пробіл">Наступна роздача ▶</button></div>
         </div>
       </div>
 
@@ -159,6 +161,12 @@
   <!-- ПРОФІЛЬ -->
   <section id="view-profile" class="view"></section>
 
+  <!-- КАР'ЄРА -->
+  <section id="view-career" class="view"></section>
+
+  <!-- ПОКЕР-ПАС -->
+  <section id="view-pass" class="view"></section>
+
   <!-- ІСТОРІЯ РОЗДАЧ -->
   <section id="view-history" class="view"></section>
 </main>
@@ -176,8 +184,11 @@
 <script src="js/quiz.js"></script>
 <script src="js/coach.js"></script>
 <script src="js/game.js"></script>
+<script src="js/autopilot.js"></script>
 <script src="js/shop.js"></script>
 <script src="js/quests.js"></script>
+<script src="js/career.js"></script>
+<script src="js/pass.js"></script>
 <script src="js/history.js"></script>
 <script src="js/backup.js"></script>
 <script src="js/menu.js"></script>

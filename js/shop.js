@@ -19,6 +19,13 @@ const SHOP = {
       { id: 'lava', n: 'Лава', price: 3500, lvl: 6 },
       { id: 'royal', n: 'Королівська', price: 6000, lvl: 8 },
       { id: 'diamond', n: 'Діамантова', price: 9000, lvl: 10 },
+      { id: 'mint', n: 'М’ята', price: 600 },
+      { id: 'deep', n: 'Глибина', price: 1100 },
+      { id: 'marble', n: 'Мармур', price: 1300 },
+      { id: 'sakura', n: 'Сакура', price: 1400, lvl: 2 },
+      { id: 'tiger', n: 'Тигрова', price: 2800, lvl: 5 },
+      { id: 'obsidian', n: 'Обсидіан', price: 4500, lvl: 7 },
+      { id: 'prism', n: 'Призма', price: 7500, lvl: 9 },
     ],
   },
   felt: {
@@ -38,6 +45,11 @@ const SHOP = {
       { id: 'space', n: 'Космос', price: 4000, lvl: 6 },
       { id: 'gold', n: 'Монако', price: 5000, lvl: 7 },
       { id: 'royal', n: 'Королівське', price: 7000, lvl: 9 },
+      { id: 'olive', n: 'Оливкове', price: 600 },
+      { id: 'sand', n: 'Пустеля', price: 1300 },
+      { id: 'lava', n: 'Вулкан', price: 3000, lvl: 5 },
+      { id: 'emerald', n: 'Смарагдове', price: 3500, lvl: 6 },
+      { id: 'aurora', n: 'Північне сяйво', price: 6000, lvl: 8 },
     ],
   },
   chips: {
@@ -51,6 +63,11 @@ const SHOP = {
       { id: 'fire', n: 'Вогняні', price: 1500, lvl: 3 },
       { id: 'gold', n: 'Золоті', price: 3000, lvl: 5 },
       { id: 'royal', n: 'Королівські', price: 5000, lvl: 8 },
+      { id: 'candy', n: 'Цукеркові', price: 500 },
+      { id: 'forest', n: 'Лісові', price: 900 },
+      { id: 'ice', n: 'Крижані', price: 1800, lvl: 3 },
+      { id: 'emerald', n: 'Смарагдові', price: 2500, lvl: 4 },
+      { id: 'diamond', n: 'Діамантові', price: 7000, lvl: 9 },
     ],
   },
   avatar: {
@@ -94,6 +111,18 @@ const SHOP = {
       { id: '👸', n: 'Принцеса', price: 4000, lvl: 6 },
       { id: '👑', n: 'Король покеру', price: 8000, lvl: 9 },
       { id: '💎', n: 'Діамант', price: 10000, lvl: 10 },
+      { id: '🐰', n: 'Кролик', price: 200 },
+      { id: '🐷', n: 'Порося', price: 200 },
+      { id: '🐻', n: 'Ведмідь', price: 300 },
+      { id: '🦝', n: 'Єнот', price: 400 },
+      { id: '🦩', n: 'Фламінго', price: 600 },
+      { id: '🧝', n: 'Ельф', price: 1200, lvl: 3 },
+      { id: '🧜', n: 'Русалка', price: 1500, lvl: 3 },
+      { id: '🧟', n: 'Зомбі', price: 1800, lvl: 4 },
+      { id: '🦸', n: 'Супергерой', price: 2200, lvl: 4 },
+      { id: '🐳', n: 'Кит', price: 2500, lvl: 5 },
+      { id: '🃏', n: 'Джокер', price: 5000, lvl: 7 },
+      { id: '🤑', n: 'Багатій', price: 6000, lvl: 8 },
     ],
   },
   frame: {
@@ -107,6 +136,13 @@ const SHOP = {
       { id: 'neon', n: 'Неонова', price: 2000, lvl: 3 },
       { id: 'rainbow', n: 'Веселка', price: 3500, lvl: 5 },
       { id: 'fire', n: 'Полум’я', price: 5000, lvl: 7 },
+      { id: 'bronze', n: 'Бронзова', price: 200 },
+      { id: 'sapphire', n: 'Сапфірова', price: 1000 },
+      { id: 'amethyst', n: 'Аметистова', price: 1200, lvl: 2 },
+      { id: 'frost', n: 'Іній', price: 1800, lvl: 3 },
+      { id: 'electric', n: 'Блискавка', price: 3000, lvl: 4 },
+      { id: 'cosmic', n: 'Космічна', price: 4500, lvl: 6 },
+      { id: 'diamond', n: 'Діамантова', price: 8000, lvl: 9 },
     ],
   },
   title: {
@@ -123,6 +159,15 @@ const SHOP = {
       { id: 'prof', n: 'Професор покеру', price: 3000, lvl: 5, c: '#fb923c' },
       { id: 'legend', n: 'Легенда', price: 6000, lvl: 8, c: '#f5c451' },
       { id: 'king', n: 'Король столу', price: 10000, lvl: 10, c: '#facc15' },
+      { id: 'fish', n: 'Риба', price: 150, c: '#7dd3fc' },
+      { id: 'tight', n: 'Тайтовий', price: 500, c: '#a1a1aa' },
+      { id: 'grinder', n: 'Гріндер', price: 700, c: '#fdba74' },
+      { id: 'allin', n: 'Ол-ін маніяк', price: 900, c: '#f87171' },
+      { id: 'reader', n: 'Читач душ', price: 1500, lvl: 2, c: '#e879f9' },
+      { id: 'nuts', n: 'Натс', price: 1800, lvl: 3, c: '#34d399' },
+      { id: 'riverking', n: 'Король рівера', price: 2500, lvl: 4, c: '#38bdf8' },
+      { id: 'whale', n: 'Кит', price: 4000, lvl: 6, c: '#818cf8' },
+      { id: 'hall', n: 'Зала слави', price: 8000, lvl: 9, c: '#fde047' },
     ],
   },
   fx: {
@@ -144,6 +189,11 @@ const SHOP = {
       { id: 'diamonds', n: 'Діаманти', price: 3000, lvl: 6, e: '💎' },
       { id: 'space', n: 'Космос', price: 4000, lvl: 7, e: '🚀' },
       { id: 'royal', n: 'Королівський салют', price: 5000, lvl: 8, e: '👑' },
+      { id: 'bubbles', n: 'Бульбашки', price: 700, e: '🫧' },
+      { id: 'music', n: 'Музика', price: 1000, e: '🎵' },
+      { id: 'cash', n: 'Грошовий дощ', price: 2200, lvl: 4, e: '💵' },
+      { id: 'thunder', n: 'Гроза', price: 3500, lvl: 6, e: '⚡' },
+      { id: 'crowns', n: 'Корони', price: 6000, lvl: 9, e: '👑' },
     ],
   },
 };
@@ -166,6 +216,11 @@ const FX_KINDS = {
   diamonds: { emoji: ['💎', '💠', '✨', '💍'] },
   space: { emoji: ['🚀', '🪐', '⭐', '🌙', '☄️'] },
   royal: { emoji: ['👑', '💎', '✨', '🏆'], then: 'confetti' },
+  bubbles: { emoji: ['🫧', '🫧', '💧', '🔵'] },
+  music: { emoji: ['🎵', '🎶', '🎷', '🎸', '🎺'] },
+  cash: { emoji: ['💵', '💶', '💴', '💷', '💰'], waves: 2 },
+  thunder: { emoji: ['⚡', '🌩️', '💥', '⚡'], waves: 2 },
+  crowns: { emoji: ['👑', '💍', '💎', '🏆'], waves: 3 },
 };
 
 function winFx(n = 70, kind = Prof.equip.fx) {
@@ -203,12 +258,35 @@ function rarity(price) {
   return { cls: 'r-legend', n: 'Легендарний' };
 }
 
+// Ексклюзиви (ex: 'career' | 'pass') не продаються й не випадають зі скринь — їх лише виграють
+const EX_NAMES = { career: 'Кар’єра', pass: 'Покер-пас' };
 function allItems() {
   const out = [];
-  for (const [cat, c] of Object.entries(SHOP)) c.items.forEach(it => { if (it.price > 0) out.push({ cat, it }); });
+  for (const [cat, c] of Object.entries(SHOP)) c.items.forEach(it => { if (it.price > 0 && !it.ex) out.push({ cat, it }); });
   return out;
 }
 const isOwned = (cat, id) => Prof.owned[cat].includes(id);
+// від дешевих до дорогих; виграні ексклюзиви — наприкінці
+const shopVisible = cat => SHOP[cat].items.filter(it => !it.ex || isOwned(cat, it.id))
+  .sort((a, b) => (a.ex ? 1 : 0) - (b.ex ? 1 : 0) || a.price - b.price);
+function findItem(cat, id) { return SHOP[cat] && SHOP[cat].items.find(x => x.id === id); }
+// Видати ексклюзивний предмет (без впливу на статистику покупок)
+function giveExclusive(cat, id) {
+  if (isOwned(cat, id)) return false;
+  Prof.owned[cat].push(id);
+  saveProfile();
+  return true;
+}
+function exclusiveCount() {
+  let n = 0;
+  for (const [cat, c] of Object.entries(SHOP)) c.items.forEach(it => { if (it.ex && isOwned(cat, it.id)) n++; });
+  return n;
+}
+// Короткий значок предмета для нагород (кар’єра, пас)
+function itemChip(cat, it) {
+  const ic = cat === 'avatar' ? it.id : cat === 'fx' ? it.e : SHOP[cat].icon;
+  return `<span class="item-chip">${ic} ${it.n}</span>`;
+}
 
 // ---------- Пропозиція дня: −30% на один предмет ----------
 const DEAL_OFF = .3;
@@ -238,6 +316,17 @@ const CHESTS = [
 function chestPool(ch) {
   return allItems().filter(x => !isOwned(x.cat, x.it.id) && x.it.price >= ch.min && x.it.price <= ch.max);
 }
+// Безкоштовна скриня-нагорода: випадковий новий предмет або, якщо все зібрано, монети
+function chestRoll(chId) {
+  const ch = CHESTS.find(c => c.id === chId);
+  const pool = chestPool(ch);
+  if (!pool.length) { addCoins(ch.price); return { coins: ch.price, ch }; }
+  const x = pool[Math.floor(Math.random() * pool.length)];
+  Prof.owned[x.cat].push(x.it.id);
+  Prof.stats.chests = (Prof.stats.chests || 0) + 1;
+  saveProfile();
+  return { ...x, ch };
+}
 
 let shopTab = 'back';
 
@@ -261,7 +350,7 @@ function itemCard(cat, it, opts = {}) {
   const locked = !owned && it.lvl && lvl < it.lvl;
   const price = priceOf(cat, it);
   const poor = !owned && !locked && Prof.coins < price;
-  const r = rarity(it.price);
+  const r = it.ex ? { cls: 'r-ex', n: EX_NAMES[it.ex] } : rarity(it.price);
   let btn;
   if (eq) btn = `<button class="btn small" disabled>✓ Обрано</button>`;
   else if (owned) btn = `<button class="btn small" onclick="equipItem('${cat}','${it.id}')">Обрати</button>`;
@@ -271,7 +360,7 @@ function itemCard(cat, it, opts = {}) {
     : !it.price ? 'Безкоштовно'
     : price < it.price ? `<s class="muted">${fmt(it.price)}</s> <b>${fmt(price)} 🪙</b>` : `${fmt(it.price)} 🪙`;
   return `<div class="shop-item ${r.cls} ${eq ? 'equipped' : ''} ${locked ? 'locked' : ''} ${opts.deal ? 'deal' : ''}">
-    ${it.price ? `<span class="rar">${r.n}</span>` : ''}
+    ${it.price || it.ex ? `<span class="rar">${r.n}</span>` : ''}
     <div class="sp" ${cat === 'fx' ? `onclick="winFx(70,'${it.id}')" title="Натисніть, щоб переглянути"` : ''}>${shopPreview(cat, it)}</div>
     <div class="si-n">${it.n}</div>
     ${opts.deal ? `<div class="si-cat muted">${SHOP[cat].icon} ${SHOP[cat].title}</div>` : ''}
@@ -284,8 +373,9 @@ function renderShop() {
   const el = $('view-shop');
   const lvl = myLevel();
   const tabs = Object.entries(SHOP).map(([k, c]) => {
-    const got = c.items.filter(it => isOwned(k, it.id)).length;
-    return `<button class="qtab ${k === shopTab ? 'active' : ''}" onclick="shopTab='${k}';renderShop()">${c.icon} ${c.title} <small class="qt-n">${got}/${c.items.length}</small></button>`;
+    const vis = shopVisible(k);
+    const got = vis.filter(it => isOwned(k, it.id)).length;
+    return `<button class="qtab ${k === shopTab ? 'active' : ''}" onclick="shopTab='${k}';renderShop()">${c.icon} ${c.title} <small class="qt-n">${got}/${vis.length}</small></button>`;
   }).join('') + `<button class="qtab qtab-chest ${shopTab === 'chest' ? 'active' : ''}" onclick="shopTab='chest';renderShop()">🎁 Скрині</button>`;
 
   let body;
@@ -309,7 +399,8 @@ function renderShop() {
     const cat = SHOP[shopTab];
     body = `${shopTab === 'fx' ? '<p class="muted">Натисніть на ефект, щоб переглянути його.</p>' : ''}
       ${shopTab === 'title' ? '<p class="muted">Титул показується під вашим ім’ям за столом, у меню та профілі.</p>' : ''}
-      <div class="shop-grid">${cat.items.map(it => itemCard(shopTab, it)).join('')}</div>`;
+      <div class="shop-grid">${shopVisible(shopTab).map(it => itemCard(shopTab, it)).join('')}</div>
+      <p class="muted ex-note">✨ Ексклюзивні предмети не продаються — їх виграють у <a href="#" onclick="showView('career');return false">🗺️ Кар’єрі</a> та <a href="#" onclick="showView('pass');return false">🎟️ Покер-пасі</a>.</p>`;
   }
 
   const deal = dailyDeal();
@@ -319,10 +410,11 @@ function renderShop() {
     </div>` : '';
 
   const total = allItems().length + Object.keys(SHOP).length;
-  const ownedN = Object.values(Prof.owned).reduce((s, a) => s + a.length, 0);
+  const exN = exclusiveCount();
+  const ownedN = Object.values(Prof.owned).reduce((s, a) => s + a.length, 0) - exN;
   el.innerHTML = `<div class="page-wrap">
     <div class="page-head"><div><h2>🛍️ Магазин</h2><p class="muted">Прикрасьте свою гру. Монети заробляються грою, уроками, тренуванням, бонусами й досягненнями.</p>
-      <p class="coll">Колекція: <b>${ownedN}</b> / ${total} <span class="mini-bar"><i style="width:${Math.round(ownedN / total * 100)}%"></i></span></p></div>
+      <p class="coll">Колекція: <b>${ownedN}</b> / ${total} <span class="mini-bar"><i style="width:${Math.round(ownedN / total * 100)}%"></i></span>${exN ? ` · ✨ ексклюзивів: <b>${exN}</b>` : ''}</p></div>
       <div class="balance-big"><span class="coin"></span>${fmt(Prof.coins)}</div></div>
     ${dealHtml}
     <div class="quiz-tabs shop-tabs">${tabs}</div>
@@ -342,7 +434,7 @@ function grantItem(cat, id) {
 
 function buyItem(cat, id) {
   const it = SHOP[cat].items.find(x => x.id === id);
-  if (!it || isOwned(cat, id)) return;
+  if (!it || it.ex || isOwned(cat, id)) return;
   if (it.lvl && myLevel() < it.lvl) return;
   if (!spendCoins(priceOf(cat, it))) { notify('Недостатньо монет.', 'warn', '🪙'); return; }
   grantItem(cat, id);

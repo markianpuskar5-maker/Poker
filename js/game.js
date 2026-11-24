@@ -153,18 +153,67 @@ function botStack(t) {
 }
 function randomBot(t) {
   const used = new Set(G.players.map(p => p.name));
-  return makeBot(pick(BOT_NAMES.filter(n => !used.has(n[0]))), TABLE_SKILL[t.id] ?? 0.45, botStack(t));
+  return dressBot(makeBot(pick(BOT_NAMES.filter(n => !used.has(n[0]))), TABLE_SKILL[t.id] ?? 0.45, botStack(t)), t);
+}
+
+// ---------- Вигляд ботів ----------
+// Чим престижніший стіл, тим дорожчі в суперників аватари, рамки й титули. Усе — предмети з магазину.
+const LOOK_TIERS = [
+  { av: [0, 300], keep: 0.6, fr: 0.1, frP: [1, 300], ti: 0 },                                         // кухня, тренування
+  { av: [0, 800], keep: 0.45, fr: 0.3, frP: [1, 1000], ti: 0.1, tiP: [1, 800] },                       // клуб, турнір новачків
+  { av: [200, 1500], keep: 0.35, fr: 0.5, frP: [200, 2000], ti: 0.2, tiP: [100, 1500] },               // казино, клубний турнір
+  { av: [500, 4000], keep: 0.2, fr: 0.75, frP: [800, 3500], ti: 0.35, tiP: [500, 3000] },              // хайролер, турнір майстрів
+  { av: [1500, Infinity], keep: 0.1, fr: 0.92, frP: [2000, Infinity], ti: 0.55, tiP: [1200, Infinity] }, // VIP
+];
+const TABLE_LOOK = { practice: 0, micro: 0, club: 1, river: 2, high: 3, vip: 4, t_rookie: 1, t_club: 2, t_master: 3 };
+function lookTier(t) {
+  if (t.career) return Math.min(4, 1 + Math.floor(CAREER.findIndex(c => c.id === t.career) / 2));
+  return TABLE_LOOK[t.id] ?? 0;
+}
+function shopPick(cat, [lo, hi], exclude = []) {
+  const pool = SHOP[cat].items.filter(it => !it.ex && it.price >= lo && it.price <= hi && !exclude.includes(it.id));
+  return pool.length ? pick(pool) : null;
+}
+function dressBot(b, t) {
+  const L = LOOK_TIERS[lookTier(t)];
+  // частина ботів лишається «собою» (людське обличчя), решта — з аватаром із магазину
+  if (!b.boss && Math.random() > L.keep) {
+    const a = shopPick('avatar', L.av, G.players.map(p => p.avatar).concat(Prof.equip.avatar));
+    if (a) b.avatar = a.id;
+  }
+  b.frame = null; b.title = null;
+  if (b.boss || Math.random() < L.fr) { const f = shopPick('frame', L.frP); if (f) b.frame = f.id; }
+  if (L.ti && Math.random() < L.ti) { const ti = shopPick('title', L.tiP); if (ti) b.title = ti; }
+  return b;
+}
+// Натиснули на аватар бота — показуємо, що на ньому з магазину
+function botLookInfo(i) {
+  const p = G.players[i];
+  if (!p || p.human) return;
+  const row = (cat, it) => {
+    if (!it || !it.price) return '';
+    const own = isOwned(cat, it.id);
+    return `<br>${SHOP[cat].icon} ${it.n} — ${own ? '<span class="earn">у вас є ✓</span>' : `<b>${fmt(it.price)} 🪙</b>${it.lvl ? ` (з рівня ${it.lvl})` : ''}`}`;
+  };
+  const html = row('avatar', findItem('avatar', p.avatar)) + row('frame', p.frame && findItem('frame', p.frame)) + row('title', p.title);
+  notify(`<b>${p.name}</b>${html || '<br><span class="muted">Звичайний вигляд — нічого з магазину.</span>'}${html ? '<br><small class="muted">Усе це є в 🛍️ Магазині</small>' : ''}`, 'info', p.avatar);
 }
 
 function initPlayers(buyin) {
   const t = G.table;
   G.players = [{ name: 'Ви', avatar: Prof.equip.avatar, human: true, chips: buyin }];
-  if (t.tourney) for (let k = 1; k < t.size; k++) {
+  if (t.boss) {
+    // Кар'єра: дуель з босом, у якого свій виражений стиль гри
+    const b = makeBot([t.boss.name, t.boss.avatar, t.boss.sex], t.skill, t.stack);
+    Object.assign(b, t.boss.traits, { skill: t.skill, boss: true, chatty: 0.35 });
+    G.players.push(dressBot(b, t));
+  }
+  else if (t.tourney) for (let k = 1; k < t.size; k++) {
     const used = new Set(G.players.map(p => p.name));
-    G.players.push(makeBot(pick(BOT_NAMES.filter(n => !used.has(n[0]))), t.skill, t.stack));
+    G.players.push(dressBot(makeBot(pick(BOT_NAMES.filter(n => !used.has(n[0]))), t.skill, t.stack), t));
   }
   else if (t.cash) for (let k = 1; k < (t.size || 4); k++) G.players.push(randomBot(t));
-  else PRACTICE_BOTS.forEach(nm => G.players.push(makeBot(nm, TABLE_SKILL.practice, t.buyin)));
+  else PRACTICE_BOTS.forEach(nm => G.players.push(dressBot(makeBot(nm, TABLE_SKILL.practice, t.buyin), t)));
   G.players.forEach(seatify);
   // що боти помічають про вашу гру за цим столом
   G.reads = { hands: 0, vpip: 0, raised: 0, bluffsShown: 0 };
@@ -233,12 +282,12 @@ function buildTable() {
     s.innerHTML = `
       <div class="seat-cards"></div>
       <div class="seat-box">
-        <div class="seat-av">${p.avatar}</div>
+        <div class="seat-av${p.frame ? ` bot-fr fr-${p.frame}` : ''}" ${p.human ? '' : `onclick="botLookInfo(${i})" title="Що на гравцеві?"`}>${p.avatar}</div>
         <span class="seat-mood"></span>
         <div class="seat-info">
           <div class="seat-name">${p.name}<span class="badges"></span></div>
           <div class="seat-chips"><span class="coin"></span><span class="v">${p.chips}</span></div>
-          ${p.human ? `<div class="seat-title">${titleBadge()}</div>` : ''}
+          ${p.human ? `<div class="seat-title">${titleBadge()}</div>` : p.title ? `<div class="seat-title">${titleBadge(p.title)}</div>` : ''}
         </div>
         <div class="seat-chat"></div>
         <div class="seat-action"></div>
@@ -275,6 +324,8 @@ function deckEl() {
   const d = $('deck');
   return isVisible(d) ? d : $('pot');
 }
+
+const HAND_SHORT = ['Старша карта', 'Пара', 'Дві пари', 'Сет', 'Стріт', 'Флеш', 'Фул-хаус', 'Каре', 'Стріт-флеш'];
 
 function actionKind(t) {
   if (!t) return '';
@@ -317,16 +368,21 @@ function renderSeat(p, i, newHole) {
   if (el.mood.textContent !== moodE) { el.mood.textContent = moodE; if (moodE) replay(el.mood, 'pop-in'); }
   el.mood.title = moodE === '😎' ? 'У гарному настрої' : moodE ? 'Засмучений після програшу' : '';
 
-  const isSB = i === nextIdx(G.dealer), isBB = i === nextIdx(nextIdx(G.dealer));
+  // один на один малий блайнд ставить дилер
+  const sbSeat = N() === 2 ? G.dealer : nextIdx(G.dealer);
+  const isSB = i === sbSeat, isBB = i === nextIdx(sbSeat);
   const badges = G.handNo ? `${isSB ? '<span class="badge sb">SB</span>' : ''}${isBB ? '<span class="badge bb">BB</span>' : ''}` : '';
   if (el.badges.innerHTML !== badges) el.badges.innerHTML = badges;
 
   tweenNumber(el.chips, p.chips);
 
-  if (el.action.dataset.t !== p.lastAction) {
-    el.action.dataset.t = p.lastAction;
+  // на вскритті плашка над гравцем показує його комбінацію (переможцю — золота з 🏆)
+  const actKey = p.lastAction + (p._hand ? '|h' + (G.lastWinners.includes(i) ? 'w' : '') : '');
+  if (el.action.dataset.t !== actKey) {
+    el.action.dataset.t = actKey;
     el.action.textContent = p.lastAction;
-    el.action.className = 'seat-action ' + actionKind(p.lastAction) + (p.lastAction ? ' show' : '');
+    const kind = p._hand ? 'k-hand' + (G.lastWinners.includes(i) ? ' k-win' : '') : actionKind(p.lastAction);
+    el.action.className = 'seat-action ' + kind + (p.lastAction ? ' show' : '');
     if (p.lastAction) replay(el.action, 'pop');
   }
 
@@ -519,7 +575,7 @@ async function bettingRound(startIdx) {
       applyAction(p, act);
       G.activeIdx = -1;
       render();
-      if (p.human) { if (!G.leaveAfter) coachAfterHuman(p, act); }
+      if (p.human) { if (!G.leaveAfter && !Auto.wasAuto) coachAfterHuman(p, act); }
       else coachWatchBot(p, act);
       if (p.bet > before) await flyChips(seatEls[idx].box, seatEls[idx].bet, { count: chipCount(p.bet - before) });
       else await sleep(act.type === 'fold' ? 300 : 150);
@@ -581,7 +637,7 @@ function refreshBots() {
 async function playHandInner() {
   $('next-box').classList.add('hidden');
   setControls(false);
-  $('result').innerHTML = '';
+  $('result').innerHTML = ''; $('res-m').innerHTML = '';
   G.lastWinners = [];
   const me = G.players[0];
   if (me.chips <= 0) { showBust(); return; }
@@ -589,7 +645,7 @@ async function playHandInner() {
   G.awarded = false;
   refreshBots();
   me.avatar = Prof.equip.avatar;
-  G.players.forEach(p => Object.assign(p, { hole: [], bet: 0, total: 0, folded: false, allIn: false, acted: false, lastAction: '', shown: false, _r: false, _vp: false, handStart: p.chips }));
+  G.players.forEach(p => Object.assign(p, { hole: [], bet: 0, total: 0, folded: false, allIn: false, acted: false, lastAction: '', shown: false, _r: false, _vp: false, _hand: false, handStart: p.chips }));
   G.aggressor = null;
   // у кожного «свій день»: трохи інакший настрій від роздачі до роздачі
   G.players.forEach(p => { if (!p.human) { p.vibe = gauss() * 0.1; p.mood *= 0.88; } });
@@ -717,7 +773,12 @@ async function finishHand() {
       }
     });
     G.lastWinners = [...winSeats];
-    html = `<div class="res-t">${G.lastWinners.includes(0) ? '🎉 Ви виграли!' : '🏆 ' + G.lastWinners.map(i => G.players[i].name).join(' і ') + ' виграє'}</div><div class="res-s">${lines.join('<br>')}</div>`;
+    // коротка назва комбінації — на плашці біля кожного, хто відкрив карти
+    live.forEach(p => {
+      p._hand = true;
+      p.lastAction = (winSeats.has(p.seat) ? '🏆 ' : '') + HAND_SHORT[evals.get(p).cat];
+    });
+    html =`<div class="res-t">${G.lastWinners.includes(0) ? '🎉 Ви виграли!' : '🏆 ' + G.lastWinners.map(i => G.players[i].name).join(' і ') + ' виграє'}</div><div class="res-s">${lines.join('<br>')}</div>`;
   }
   syncSeat();
   botsAfterHand(live);
@@ -729,6 +790,8 @@ async function finishHand() {
   await Promise.all(flights);
   $('result').innerHTML = html;
   replay($('result'), 'pop-in');
+  // на телефоні результат показується над кнопкою «Наступна роздача» — там його ніщо не закриває
+  $('res-m').innerHTML = html;
 
   // ---- результат для профілю ----
   const diff = me.chips - startChips;
@@ -758,14 +821,16 @@ async function finishHand() {
   if (diff > 0) { winFx(diff >= BB * 15 ? 140 : 70); const big = diff >= BB * 15; sfx(big ? 'bigwin' : 'win'); buzz(big ? 'bigwin' : 'win'); }
   else if (diff < 0 && !me.folded && live.length > 1) { sfx('lose'); buzz('lose'); }
   renderCoachReview(diff);
+  autoHandEnd(diff);
   updateTableBar();
   if (isTourney() && tourneyAfterHand()) return;
   if (G.leaveAfter) return;
   showNextButton();
-  if (me.chips <= 0) { $('btn-next').textContent = isCash() ? '💸 Фішки закінчились' : '💸 Докупити фішки'; }
+  if (me.chips <= 0) { $('btn-next').textContent = isCash() ? '💸 Фішки закінчились' : '💸 Докупити фішки'; if (autoActive()) autoScheduleNext(); }
   else {
     $('btn-next').textContent = 'Наступна роздача ▶';
-    if (G.settings.auto) {
+    if (autoActive()) autoScheduleNext();
+    else if (G.settings.auto) {
       const h = G.handNo;
       G.autoTimer = setTimeout(() => {
         const visible = $('view-play').classList.contains('active') && $('modal').classList.contains('hidden');
@@ -801,9 +866,11 @@ function rebuy() {
 function humanTurn(p) {
   if (G.leaveAfter) return Promise.resolve({ type: 'fold' });
   sfx('turn'); buzz('turn');
+  Auto.wasAuto = false;
   return new Promise(resolve => {
     G.humanResolve = resolve;
     setupControls(p);
+    if (autoActive()) { autoTurn(p); return; } // автогра: ходить Claude і пояснює (js/autopilot.js)
     coachBeforeHuman(p);
     renderCoach(p);
   });
@@ -1075,6 +1142,7 @@ function tourneyAfterHand() {
 function endTourney(place, forfeit = false) {
   const t = G.table;
   if (!t || !t.tourney) return;
+  if (t.career) { careerEnd(t, place, forfeit); return; }
   const prize = forfeit ? 0 : (t.prizes[place - 1] || 0);
   const s = G.session;
   Prof.tourney = null;
@@ -1189,7 +1257,7 @@ function startTable(t, buyin) {
   G.handNo = 0;
   G.board = []; G.street = 'idle'; G.lastWinners = []; G.awarded = false;
   $('log').innerHTML = '';
-  $('result').innerHTML = '';
+  $('result').innerHTML = ''; $('res-m').innerHTML = '';
   buildTable();
   render();
   setControls(false);
@@ -1199,7 +1267,9 @@ function startTable(t, buyin) {
   coachHandStart();
   renderCoachIdle();
   showView('play');
-  log(t.tourney
+  log(t.career
+    ? `🗺️ Дуель у місті ${t.city}: ви проти <b>${t.boss.name}</b> (${t.boss.style}). У кожного ${fmt(t.stack)} фішок, блайнди ростуть кожні ${t.levelHands} роздач. Хто забере всі фішки — переміг.`
+    : t.tourney
     ? `🏟️ Турнір «${t.name}»: ${t.size} гравців по ${fmt(t.stack)} фішок. Блайнди ростуть кожні ${t.levelHands} роздач. Призи: ${t.prizes.map((p, i) => `${i + 1}-е — ${fmt(p)} 🪙`).join(', ')}.`
     : t.cash
     ? `Ви сіли за стіл «${t.name}» з ${fmt(buyin)} фішками. Блайнди ${SB}/${BB}.`
@@ -1207,7 +1277,7 @@ function startTable(t, buyin) {
   setTimeout(playHand, 350);
   // хтось за столом вітається
   const bots = G.players.filter(p => !p.human);
-  setTimeout(() => botSay(pick(bots), 'sit', true), 900);
+  setTimeout(() => t.boss ? sayText(bots[0], t.boss.hello) : botSay(pick(bots), 'sit', true), 900);
 }
 
 function startPractice() {
@@ -1223,7 +1293,10 @@ function requestLeave() {
   if (!G.table) return;
   if (isTourney() && !G.leaveAfter) {
     const alive = G.players.filter(p => p.chips > 0).length;
-    showModal(`<h2>Покинути турнір?</h2><p>Внесок не повертається, і ви не отримаєте призу. Зараз у грі ще ${alive} гравців.</p>
+    showModal(G.table.career
+      ? `<h2>Здатися?</h2><p>Дуель буде зараховано як поразку, а внесок не повертається.</p>
+      <p class="modal-btns"><button class="btn fold" onclick="confirmLeave()">Так, здаюся</button><button class="btn primary" onclick="closeModal()">Граю далі</button></p>`
+      : `<h2>Покинути турнір?</h2><p>Внесок не повертається, і ви не отримаєте призу. Зараз у грі ще ${alive} гравців.</p>
       <p class="modal-btns"><button class="btn fold" onclick="confirmLeave()">Так, вийти</button><button class="btn primary" onclick="closeModal()">Граю далі</button></p>`);
     return;
   }
@@ -1258,7 +1331,7 @@ function cleanupTable() {
   SB = 10; BB = 20;
   buildTable();
   render();
-  $('result').innerHTML = '';
+  $('result').innerHTML = ''; $('res-m').innerHTML = '';
   $('controls').classList.add('hidden');
   $('next-box').classList.add('hidden');
   $('hint-bar').classList.add('hidden');
@@ -1325,7 +1398,7 @@ function updateTableBar() {
   }
   $('tb-sess').innerHTML = sess;
   const b = $('btn-leave');
-  b.innerHTML = G.leaveAfter ? '⏳<span class="d-only"> Вийдете після роздачі (скасувати)</span>' : `🚪<span class="d-only"> ${t.tourney ? 'Покинути турнір' : 'Встати з-за столу'}</span>`;
+  b.innerHTML = G.leaveAfter ? '⏳<span class="d-only"> Вийдете після роздачі (скасувати)</span>' : `🚪<span class="d-only"> ${t.career ? 'Здатися' : t.tourney ? 'Покинути турнір' : 'Встати з-за столу'}</span>`;
   b.classList.toggle('pending', G.leaveAfter);
   const cb = $('tb-coach');
   if (cb) { cb.classList.toggle('off', Coach.mode === 'off'); cb.title = Coach.mode === 'off' ? 'Тренер вимкнений — натисніть, щоб увімкнути' : 'Тренер увімкнений — натисніть, щоб вимкнути'; }

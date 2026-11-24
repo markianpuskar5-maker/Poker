@@ -15,9 +15,11 @@ const VIEW_RENDER = {
   shop: () => renderShop(),
   profile: () => renderProfile(),
   history: () => renderHistory(),
+  career: () => renderCareer(),
+  pass: () => renderPass(),
   quiz: () => { const s = document.querySelector('#quiz-area .qscore'); if (s) s.outerHTML = quizScoreHTML(); },
 };
-const NAV_OF = { lobby: 'play', profile: 'menu', history: 'menu' };
+const NAV_OF = { lobby: 'play', profile: 'menu', history: 'menu', career: 'menu', pass: 'menu' };
 
 function showView(v) {
   if (v === 'play' && !G.table) v = 'lobby';

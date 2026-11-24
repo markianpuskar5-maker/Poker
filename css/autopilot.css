@@ -1,0 +1,56 @@
+/* ===== Автогра: вікно «Claude грає» ===== */
+/* на широкому екрані вікно стоїть у бічній колонці замість тренера, на вужчих — плаває поверх */
+.side > .auto-panel { position: relative; max-height: 62vh; }
+body.auto-side .side .coach-panel { display: none; }
+body > .auto-panel { position: fixed; right: 12px; top: 84px; z-index: 60; width: 360px; max-width: calc(100vw - 24px); max-height: 44vh; }
+.auto-panel {
+  display: flex; flex-direction: column;
+  background: rgba(15, 21, 28, .96); border: 1px solid rgba(167, 139, 250, .45);
+  border-radius: var(--radius); box-shadow: var(--shadow), 0 0 0 4px rgba(167, 139, 250, .08);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  color: var(--text); font-size: 14px; line-height: 1.45;
+  animation: ap-in .35s var(--ease);
+}
+@keyframes ap-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.auto-panel.min { max-height: none; }
+.auto-panel.min .ap-body { display: none; }
+
+.ap-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px 10px 14px; border-bottom: 1px solid var(--line); }
+.ap-head b { font-size: 15px; color: #c4b5fd; }
+.ap-status { flex: 1; font-size: 12px; color: var(--accent); }
+.ap-head button { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); cursor: pointer; font-size: 14px; }
+.ap-head button:hover { background: var(--panel3); }
+
+.ap-body { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.ap-tools { display: flex; align-items: center; gap: 4px; padding: 8px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.ap-tools button { border: 1px solid var(--line2); background: transparent; color: var(--muted); border-radius: 8px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
+.ap-tools button.on { background: rgba(167, 139, 250, .2); color: #ddd6fe; border-color: rgba(167, 139, 250, .6); }
+.ap-stats { margin-left: auto; }
+
+.ap-feed { overflow-y: auto; padding: 8px 12px 12px; flex: 1; min-height: 80px; scroll-behavior: smooth; }
+.ap-item { margin-top: 8px; animation: ap-in .3s var(--ease); }
+.ap-item p { margin: 4px 0 0; }
+.ap-item small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+.ap-hand { margin-top: 14px; padding: 6px 10px; border-radius: 9px; background: var(--panel2); font-size: 13px; color: var(--muted); }
+.ap-hand b { color: var(--text); font-size: 15px; letter-spacing: .5px; }
+.ap-hand i { font-style: normal; }
+.ap-hand i.red { color: #f87171; }
+.ap-act { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; padding: 3px 10px 3px 4px; border-radius: 8px; letter-spacing: .3px; }
+.ap-act span { font-weight: 600; font-size: 11px; padding: 2px 6px; border-radius: 6px; background: rgba(0, 0, 0, .3); color: var(--muted); }
+.ap-act.fold { background: rgba(239, 68, 68, .16); color: #fca5a5; }
+.ap-act.check, .ap-act.call { background: rgba(59, 130, 246, .16); color: #93c5fd; }
+.ap-act.raise { background: rgba(245, 196, 81, .16); color: var(--accent); }
+.ap-end { padding: 6px 10px; border-left: 3px solid var(--line2); color: var(--muted); }
+.ap-end.pos { border-color: var(--green); color: #bbf7d0; }
+.ap-end.neg { border-color: var(--red); color: #fecaca; }
+.ap-intro { color: #ddd6fe; font-size: 13px; }
+
+/* кнопка на панелі столу */
+.tb-btn.tb-auto.on { background: rgba(167, 139, 250, .25); border-color: rgba(167, 139, 250, .7); box-shadow: 0 0 12px rgba(167, 139, 250, .45); }
+
+/* «натискання» кнопки автогрою — щоб було видно, що зроблено */
+.btn.auto-press { transform: scale(.94); box-shadow: 0 0 0 3px rgba(167, 139, 250, .9), 0 0 22px rgba(167, 139, 250, .6) !important; transition: transform .15s, box-shadow .15s; }
+
+@media (max-width: 700px) {
+  body > .auto-panel { left: 8px; right: 8px; top: auto; width: auto; max-width: none; bottom: calc(8px + env(safe-area-inset-bottom)); max-height: 34vh; font-size: 13px; }
+}

@@ -48,6 +48,15 @@ function renderMenu() {
   const tUnlocked = TOURNEYS.filter(t => t.lvl <= lp.l).length;
   const backupNote = backupDue() ? `<div class="banner"><span class="bn-i">💾</span><div><b>Збережіть прогрес</b><br><small class="muted">Він зберігається лише в цьому браузері. Копія займе 5 секунд.</small></div><button class="btn small primary" onclick="openBackup()">Зберегти</button></div>` : '';
 
+  // Кар'єра і Покер-пас
+  const crN = careerBeatCount();
+  const crNext = CAREER.find((c, i) => careerOpenCity(i) && !careerBeat(c.id));
+  const ps = passState();
+  const psClaim = passClaimable(ps);
+  const psLeft = seasonNow().end - Date.now();
+  const psHurry = psLeft < 3 * 864e5;
+  const dot = n => n ? `<span class="t-dot">${n}</span>` : '';
+
   el.innerHTML = `<div class="menu">
     <div class="hero">
       <div class="hero-l">
@@ -70,6 +79,8 @@ function renderMenu() {
     <div class="mrow">${daily}${rescue}</div>
     ${questsHTML()}
     <div class="tiles">
+      ${tile('t-career', '🗺️', 'Кар’єра', `Турне містами: дуелі з босами${crNext ? ` · далі ${crNext.icon} ${crNext.city}` : ''}`, `<span class="mini-bar"><i style="width:${Math.round(crN / CAREER.length * 100)}%"></i></span>${crN}/${CAREER.length} міст`, "showView('career')")}
+      ${tile('t-pass' + (psHurry ? ' hurry' : ''), '🎟️' + dot(psClaim), 'Покер-пас', `Сезон «${seasonDef(ps.s).n}»: нагороди й ексклюзиви`, `Рів. ${passTier(ps)}/${PASS_TIERS} · ⏳ ${passLeftText(psLeft).replace(/ \d+ (год|хв)\.$/, '')}`, "showView('pass')")}
       ${tile('t-coach', '🎓', 'Гра з тренером', 'Безкоштовні фішки. Тренер підказує й оцінює кожен хід', 'Без ризику', 'startPractice()')}
       ${tile('t-cash', '🪙', 'Гра на монети', 'Кеш-столи на 4 або 6 гравців', `${unlocked}/${TABLES.length} столів`, "showView('lobby')")}
       ${tile('t-tour', '🏟️', 'Турніри', 'Sit & Go на 6 гравців: виживи й забери приз', `${tUnlocked}/${TOURNEYS.length} відкрито`, "openTourneys()")}

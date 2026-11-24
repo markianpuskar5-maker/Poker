@@ -1,13 +1,13 @@
 // Service worker: гра працює без інтернету після першого відкриття.
 // Після зміни файлів гри збільште номер версії, щоб телефон підтягнув оновлення.
-const CACHE = 'poker-school-v5';
+const CACHE = 'poker-school-v9';
 const FILES = [
   './',
   'index.html',
   'manifest.webmanifest',
-  'css/style.css',
+  'css/style.css', 'css/autopilot.css',
   'js/fx.js', 'js/sound.js', 'js/engine.js', 'js/profile.js', 'js/lessons.js', 'js/quiz.js',
-  'js/coach.js', 'js/game.js', 'js/shop.js', 'js/quests.js', 'js/history.js', 'js/backup.js', 'js/menu.js', 'js/app.js',
+  'js/coach.js', 'js/game.js', 'js/autopilot.js','js/shop.js', 'js/quests.js', 'js/career.js', 'js/pass.js', 'js/history.js', 'js/backup.js', 'js/menu.js', 'js/app.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
 

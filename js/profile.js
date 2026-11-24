@@ -25,6 +25,8 @@ function defaultProfile() {
     rescueAt: 0,
     seat: null,         // { table, chips } — фішки на кеш-столі (на випадок закриття вкладки)
     lessonsPaid: [],
+    career: { beat: {} },  // кар'єра: скільки разів переможено кожного боса
+    pass: null,            // покер-пас поточного сезону
   };
 }
 
@@ -146,6 +148,7 @@ function claimDaily() {
   addCoins(d.reward);
   addXp(20);
   notify(`Щоденний бонус (день ${d.streak}): <span class="earn">+${d.reward} 🪙</span>`, 'info', '🎁');
+  if (typeof passAdd === 'function') passAdd(PASS_PTS.daily);
   if (typeof winFx === 'function') winFx(50);
   renderMenu();
 }
@@ -173,6 +176,11 @@ const ACHIEVEMENTS = [
   { id: 'chest_1', icon: '🗝️', t: 'Щасливий ключ', d: 'Відкрийте першу скриню', r: 100 },
   { id: 'tourney_win', icon: '🏟️', t: 'Чемпіон', d: 'Виграйте турнір', r: 500 },
   { id: 'level_5', icon: '⭐', t: 'Досвідчений', d: 'Досягніть 5 рівня', r: 250 },
+  { id: 'career_1', icon: '🗺️', t: 'Перше місто', d: 'Переможіть першого боса в Кар’єрі', r: 200, goal: s => [s.careerBeat || 0, 1] },
+  { id: 'career_4', icon: '✈️', t: 'Мандрівник', d: 'Переможіть 4 босів у Кар’єрі', r: 1000, goal: s => [s.careerBeat || 0, 4] },
+  { id: 'career_all', icon: '🌍', t: 'Чемпіон світу', d: 'Пройдіть усе турне містами', r: 5000, goal: s => [s.careerBeat || 0, 8] },
+  { id: 'pass_prem', icon: '🎟️', t: 'Власник пасу', d: 'Відкрийте преміум Покер-пасу', r: 300 },
+  { id: 'pass_30', icon: '🏅', t: 'Сезон закрито', d: 'Дійдіть до 30 рівня Покер-пасу', r: 1000 },
 ];
 
 function unlockAch(id) {

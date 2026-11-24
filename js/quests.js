@@ -41,6 +41,7 @@ function questsToday() {
 const questDef = id => QUESTS.find(q => q.id === id);
 
 function gameEvent(type, e = {}) {
+  if (typeof passOnEvent === 'function') passOnEvent(type, e);
   const st = questsToday();
   let changed = false;
   st.list.forEach(it => {
@@ -58,6 +59,7 @@ function gameEvent(type, e = {}) {
       saveProfile();
       updateWalletUI(q.r);
       addXp(30);
+      if (typeof passAdd === 'function') passAdd(PASS_PTS.quest);
       notify(`<b>Завдання виконано!</b><br>${q.t}<br><span class="earn">+${q.r} 🪙</span>`, 'ach', q.icon);
       if (typeof sfx === 'function') { sfx('ach'); buzz('ach'); }
     }
@@ -66,6 +68,7 @@ function gameEvent(type, e = {}) {
     st.bonus = true;
     Prof.coins += QUEST_ALL_BONUS;
     updateWalletUI(QUEST_ALL_BONUS);
+    if (typeof passAdd === 'function') passAdd(PASS_PTS.allQuests);
     setTimeout(() => notify(`<b>Усі завдання дня виконано!</b><br>Бонус: <span class="earn">+${QUEST_ALL_BONUS} 🪙</span>`, 'level', '🌟'), 900);
   }
   if (changed) {
